@@ -1,4 +1,5 @@
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -371,12 +372,12 @@ public:
         // (B v E)  (B v F)  (B v G)  (B v H)
         // (C v E)  (C v F)           (C v H)
         // (D v E)  (D v F)
-        // 
+        //
         // We would start with the following matrix:
         // matched_entries:     (A, (A v E), 0)  (A, (A v F), 1)  (A, (A v G), 2)  (A, (A v H), 3)
         // matched_clauses_id:  0  1  2  3
         // matched_clauses:     (A v E)  (A v F)  (A v G)  (A v H)
-        // 
+        //
         // Then, when we add B to matched_lits, we would get:
         // matched_entries:     (A, (A v E), 0)  (A, (A v F), 1)  (A, (A v G), 2)  (A, (A v H), 3)
         //                      (B, (B v E), 0)  (B, (B v F), 1)  (B, (B v G), 2)  (B, (B v H), 3)
@@ -391,9 +392,9 @@ public:
         // matched_clauses:     (A v E)  (A v F)  (A v H)
         //
         // Adding D to matched_lits would not result in a reduction so we stop here.
-        // 
+        //
         // The matched_clauses_id is then used as a filter to find the clauses to remove:
-        // 
+        //
         // to_remove:   (A v E)  (A v F)  (A v H)
         //              (B v E)  (B v F)  (B v H)
         //              (C v E)  (C v F)  (C v H)
@@ -436,7 +437,7 @@ public:
                 }
                 return;
             }
-            
+
             matched_lits->resize(0);
             matched_clauses->resize(0);
             matched_clauses_id->resize(0);
@@ -461,7 +462,7 @@ public:
 
             // Mlit := { l }
             matched_lits->push_back(var);
-            
+
             // Mcls := F[l]
             for (int i = 0; i < lit_to_clauses->operator[](lit_index(var)).size(); i++) {
                 int clause_idx = lit_to_clauses->operator[](lit_index(var))[i];
@@ -515,7 +516,7 @@ public:
 
                         // diff := C \ D (limited to 2)
                         clause_sub(clause, other, diff, 2);
-                        
+
                         // if diff = {l} then
                         if (diff->size() == 1 && diff->operator[](0) == var) {
                             // diff := D \ C (limited to 2)
