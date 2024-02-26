@@ -53,8 +53,8 @@ struct Clause {
         if (deleted) {
             printf("DELETED: ");
         }
-        for (size_t i = 0; i < lits.size(); i++) {
-            printf("%d ", lits[i]);
+        for (int lit : lits) {
+            printf("%d ", lit);
         }
         printf("\n");
     }
@@ -101,7 +101,7 @@ struct ClauseHash {
 struct ClauseCache {
     unordered_set<Clause, ClauseHash> clauses;
 
-    ClauseCache() {}
+    ClauseCache() = default;
 
     void add(Clause *c) {
         clauses.insert(*c);
@@ -128,7 +128,6 @@ int reduction(int lits, int clauses) {
     return (lits * clauses) - (lits + clauses);
 }
 
-
 class Formula {
 public:
     static Formula *parse(FILE *fin, SBVA::Common common) {
@@ -137,19 +136,75 @@ public:
         return f;
     }
 
-    Formula(SBVA::Common _common) : common(_common){
-        found_header = false;
-        adj_deleted = 0;
+    ~Formula() {
+        delete cache;
+    }
+
+    Formula(SBVA::Common _common) : common(_common) { }
+
+    void init_cnf(uint32_t _num_vars, uint32_t _num_clauses) {
+        num_vars = _num_vars;
+        num_clauses = _num_clauses;
+        clauses = new vector<Clause>(num_clauses);
+        clauses->reserve(num_clauses * 10);
+        lit_to_clauses = new vector< vector<int> >(num_vars * 2);
+        lit_count_adjust = new vector<int>(num_vars * 2);
+        adjacency_matrix_width = num_vars * 4;
+        adjacency_matrix.resize(num_vars);
+        found_header = true;
+        curr_clause = 0;
+        assert(cache == nullptr);
+        cache = new ClauseCache;
+    }
+
+    void add_cl(vector<int> cl_lits) {
+        assert(found_header);
+        if (curr_clause >= num_clauses) {
+            fprintf(stderr, "Error: CNF file has more clauses than specified in header\n");
+            exit(1);
+        }
+
+        for(const auto& lit: cl_lits) {
+            assert(lit != 0);
+            if ((uint32_t)abs(lit) > num_vars) {
+                fprintf(stderr, "Error: CNF file has a variable that is greater than the number of variables specified in the header\n");
+                exit(1);
+            }
+            clauses->operator[](curr_clause).lits.push_back(lit);
+        }
+
+        sort(clauses->operator[](curr_clause).lits.begin(), clauses->operator[](curr_clause).lits.end());
+
+        auto *cls = &clauses->operator[](curr_clause);
+        if (cache->contains(cls)) {
+            cls->deleted = true;
+            adj_deleted++;
+        } else {
+            cache->add(cls);
+            for (auto l : clauses->operator[](curr_clause).lits) {
+                lit_to_clauses->operator[](lit_index(l)).push_back(curr_clause);
+            }
+        }
+
+        curr_clause++;
+    }
+
+    void finish_cnf() {
+        delete cache;
+        cache = nullptr;
+        for (size_t i=1; i<=num_vars; i++) {
+            update_adjacency_matrix(i);
+        }
     }
 
     void read_cnf(FILE *fin) {
-        char *line = NULL;
+        char *line = nullptr;
         size_t len = 0;
 
-        ClauseCache cache;
+        assert(cache == nullptr);
+        cache = new ClauseCache;
 
-        int curr_clause = 0;
-
+        curr_clause = 0;
         while (getline(&line, &len, fin) != -1) {
             if (len == 0) {
                 continue;
@@ -157,7 +212,7 @@ public:
             if (line[0] == 'c') {
                 continue;
             } else if (line[0] == 'p') {
-                sscanf(line, "p cnf %d %d", &num_vars, &num_clauses);
+                sscanf(line, "p cnf %lu %lu", &num_vars, &num_clauses);
                 clauses = new vector<Clause>(num_clauses);
                 clauses->reserve(num_clauses * 10);
                 lit_to_clauses = new vector< vector<int> >(num_vars * 2);
@@ -182,7 +237,7 @@ public:
                     if (lit == 0) {
                         break;
                     }
-                    if (abs(lit) > num_vars) {
+                    if ((uint32_t)abs(lit) > num_vars) {
                         fprintf(stderr, "Error: CNF file has a variable that is greater than the number of variables specified in the header\n");
                         exit(1);
                     }
@@ -194,11 +249,11 @@ public:
                 sort(clauses->operator[](curr_clause).lits.begin(), clauses->operator[](curr_clause).lits.end());
 
                 auto *cls = &clauses->operator[](curr_clause);
-                if (cache.contains(cls)) {
+                if (cache->contains(cls)) {
                     cls->deleted = true;
                     adj_deleted++;
                 } else {
-                    cache.add(cls);
+                    cache->add(cls);
                     for (auto l : clauses->operator[](curr_clause).lits) {
                         lit_to_clauses->operator[](lit_index(l)).push_back(curr_clause);
                     }
@@ -207,8 +262,10 @@ public:
                 curr_clause++;
             }
         }
+        delete cache;
+        cache = nullptr;
 
-        for (int i=1; i<=num_vars; i++) {
+        for (size_t i=1; i<=num_vars; i++) {
             update_adjacency_matrix(i);
         }
     }
@@ -265,13 +322,13 @@ public:
     }
 
     void to_cnf(FILE *fout) {
-        fprintf(fout, "p cnf %d %d\n", num_vars, num_clauses - adj_deleted);
-        for (int i = 0; i < num_clauses; i++) {
+        fprintf(fout, "p cnf %lu %lu\n", num_vars, num_clauses - adj_deleted);
+        for (size_t i = 0; i < num_clauses; i++) {
             if (clauses->operator[](i).deleted) {
                 continue;
             }
-            for (size_t j = 0; j < clauses->operator[](i).lits.size(); j++) {
-                fprintf(fout, "%d ", clauses->operator[](i).lits[j]);
+            for (int lit : clauses->operator[](i).lits) {
+                fprintf(fout, "%d ", lit);
             }
             fprintf(fout, "0\n");
         }
@@ -283,8 +340,8 @@ public:
             if (!clause->is_addition) {
                 fprintf(fproof, "d ");
             }
-            for (size_t j = 0; j < clause->lits.size(); j++) {
-                fprintf(fproof, "%d ", clause->lits[j]);
+            for (int lit : clause->lits) {
+                fprintf(fproof, "%d ", lit);
             }
             fprintf(fproof, "0\n");
         }
@@ -313,7 +370,7 @@ public:
     // Performs partial clause difference between clause and other, storing the result in diff.
     // Only the first max_diff literals are stored in diff.
     // Requires that clause and other are sorted.
-    void clause_sub(Clause *clause, Clause *other, vector<int> *diff, int max_diff) {
+    void clause_sub(Clause *clause, Clause *other, vector<int> *diff, uint32_t max_diff) {
         diff->resize(0);
         size_t idx_a = 0;
         size_t idx_b = 0;
@@ -348,7 +405,7 @@ public:
         priority_queue<pair<int,int>, vector< pair<int,int> >, pair_op> pq;
 
         // Add all of the variables from the original formula to the priority queue.
-        for (int i = 1; i <= num_vars; i++) {
+        for (size_t i = 1; i <= num_vars; i++) {
             pq.push(make_pair(real_lit_count(i), i));
             pq.push(make_pair(real_lit_count(-i), -i));
         }
@@ -423,13 +480,13 @@ public:
         }
 
         // Track number of replacements (new auxiliary variables).
-        int num_replacements = 0;
+        size_t num_replacements = 0;
 
 
-        while (pq.size() > 0) {
+        while (!pq.empty()) {
             // check timeout
             if (common.end_time != 0) {
-                time_t curr = time(0);
+                time_t curr = time(nullptr);
                 if (curr >= common.end_time) {
                     if (common.enable_trace) {
                         cout << "Timeout" << endl;
@@ -816,12 +873,14 @@ public:
     }
 
 private:
-    bool found_header;
-    int num_vars;
-    int num_clauses;
-    int adj_deleted;
+    bool found_header = false;
+    size_t num_vars;
+    size_t num_clauses;
+    size_t curr_clause = 0;
+    int adj_deleted = 0;
     vector<Clause> *clauses;
     SBVA::Common common;
+    ClauseCache* cache = nullptr;
 
     // maps each literal to a vector of clauses that contain it
     vector< vector<int> > *lit_to_clauses;

@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <cstdio>
 #include <ctime>
+#include <cstdint>
 
 namespace SBVA {
 
@@ -32,6 +33,7 @@ struct Common {
     bool generate_proof = 0;
     time_t end_time = 0;
     unsigned int max_replacements = 0;
+    uint32_t verb = 0;
 };
 
 enum Tiebreak {
