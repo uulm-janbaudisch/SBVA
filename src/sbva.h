@@ -23,8 +23,16 @@ THE SOFTWARE.
 #pragma once
 
 #include <cstdio>
+#include <ctime>
 
 namespace SBVA {
+
+struct Common {
+    bool enable_trace = 0;
+    bool generate_proof = 0;
+    time_t end_time = 0;
+    unsigned int max_replacements = 0;
+};
 
 enum Tiebreak {
     ThreeHop, // default
@@ -37,7 +45,7 @@ struct CNF {
     void to_cnf(FILE*);
     void to_proof(FILE*);
 
-    void* data;
+    void* data = NULL;
 };
 
 CNF parse_cnf(FILE*);

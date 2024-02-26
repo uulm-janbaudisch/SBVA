@@ -40,15 +40,6 @@ THE SOFTWARE.
 
 using namespace std;
 
-
-
-
-static bool enable_trace = 0;
-static bool generate_proof = 0;
-
-static time_t end_time = 0;
-static unsigned int max_replacements = 0;
-
 struct Clause {
     bool deleted;
     vector<int> lits;
@@ -62,7 +53,7 @@ struct Clause {
         if (deleted) {
             printf("DELETED: ");
         }
-        for (int i = 0; i < lits.size(); i++) {
+        for (size_t i = 0; i < lits.size(); i++) {
             printf("%d ", lits[i]);
         }
         printf("\n");
@@ -79,7 +70,7 @@ struct Clause {
         if (lits.size() != other.lits.size()) {
             return false;
         }
-        for (int i = 0; i < lits.size(); i++) {
+        for (size_t i = 0; i < lits.size(); i++) {
             if (lits[i] != other.lits[i]) {
                 return false;
             }
@@ -93,9 +84,9 @@ struct ProofClause {
     bool is_addition;
     vector<int> lits;
 
-    ProofClause(bool is_addition, vector<int> lits) {
-        this->is_addition = is_addition;
-        this->lits = lits;
+    ProofClause(bool _is_addition, vector<int> _lits) {
+        this->is_addition = _is_addition;
+        this->lits = _lits;
     }
 };
 
@@ -140,13 +131,13 @@ int reduction(int lits, int clauses) {
 
 class Formula {
 public:
-    static Formula *parse(FILE *fin) {
-        Formula *f = new Formula();
+    static Formula *parse(FILE *fin, SBVA::Common common) {
+        Formula *f = new Formula(common);
         f->read_cnf(fin);
         return f;
     }
 
-    Formula() {
+    Formula(SBVA::Common _common) : common(_common){
         found_header = false;
         adj_deleted = 0;
     }
@@ -208,8 +199,8 @@ public:
                     adj_deleted++;
                 } else {
                     cache.add(cls);
-                    for (auto lit : clauses->operator[](curr_clause).lits) {
-                        lit_to_clauses->operator[](lit_index(lit)).push_back(curr_clause);
+                    for (auto l : clauses->operator[](curr_clause).lits) {
+                        lit_to_clauses->operator[](lit_index(l)).push_back(curr_clause);
                     }
                 }
 
@@ -279,7 +270,7 @@ public:
             if (clauses->operator[](i).deleted) {
                 continue;
             }
-            for (int j = 0; j < clauses->operator[](i).lits.size(); j++) {
+            for (size_t j = 0; j < clauses->operator[](i).lits.size(); j++) {
                 fprintf(fout, "%d ", clauses->operator[](i).lits[j]);
             }
             fprintf(fout, "0\n");
@@ -287,12 +278,12 @@ public:
     }
 
     void to_proof(FILE *fproof) {
-        for (int i = 0; i < proof->size(); i++) {
+        for (size_t i = 0; i < proof->size(); i++) {
             auto *clause = &proof->operator[](i);
             if (!clause->is_addition) {
                 fprintf(fproof, "d ");
             }
-            for (int j = 0; j < clause->lits.size(); j++) {
+            for (size_t j = 0; j < clause->lits.size(); j++) {
                 fprintf(fproof, "%d ", clause->lits[j]);
             }
             fprintf(fproof, "0\n");
@@ -324,8 +315,8 @@ public:
     // Requires that clause and other are sorted.
     void clause_sub(Clause *clause, Clause *other, vector<int> *diff, int max_diff) {
         diff->resize(0);
-        int idx_a = 0;
-        int idx_b = 0;
+        size_t idx_a = 0;
+        size_t idx_b = 0;
 
         while (idx_a < clause->lits.size() && idx_b < other->lits.size() && diff->size() <= max_diff) {
             if (clause->lits[idx_a] == other->lits[idx_b]) {
@@ -345,7 +336,7 @@ public:
         }
     }
 
-    void run(Tiebreak tiebreak_mode) {
+    void run(SBVA::Tiebreak tiebreak_mode) {
         struct pair_op {
             bool operator()(const pair<int, int> &a, const pair<int, int> &b) {
                 return a.first < b.first;
@@ -427,7 +418,7 @@ public:
         unordered_set<int> lits_to_update;
         lits_to_update.reserve(10000);
 
-        if (generate_proof) {
+        if (common.generate_proof) {
             proof = new vector<ProofClause>();
         }
 
@@ -437,10 +428,10 @@ public:
 
         while (pq.size() > 0) {
             // check timeout
-            if (end_time != 0) {
+            if (common.end_time != 0) {
                 time_t curr = time(0);
-                if (curr >= end_time) {
-                    if (enable_trace) {
+                if (curr >= common.end_time) {
+                    if (common.enable_trace) {
                         cout << "Timeout" << endl;
                     }
                     return;
@@ -448,9 +439,9 @@ public:
             }
 
             // check replacement limit
-            if (max_replacements != 0 && num_replacements == max_replacements) {
-                if (enable_trace) {
-                    cout << "Hit replacement limit (" << max_replacements << ")" << endl;
+            if (common.max_replacements != 0 && num_replacements == common.max_replacements) {
+                if (common.enable_trace) {
+                    cout << "Hit replacement limit (" << common.max_replacements << ")" << endl;
                 }
                 return;
             }
@@ -472,7 +463,7 @@ public:
                 continue;
             }
 
-            if (enable_trace) {
+            if (common.enable_trace) {
                 cout << "Trying " << var << " (" << num_matched << ")" << endl;
             }
 
@@ -481,7 +472,7 @@ public:
             matched_lits->push_back(var);
 
             // Mcls := F[l]
-            for (int i = 0; i < lit_to_clauses->operator[](lit_index(var)).size(); i++) {
+            for (size_t i = 0; i < lit_to_clauses->operator[](lit_index(var)).size(); i++) {
                 int clause_idx = lit_to_clauses->operator[](lit_index(var))[i];
                 if (!clauses->operator[](clause_idx).deleted) {
                     matched_clauses->push_back(clause_idx);
@@ -495,21 +486,21 @@ public:
                 matched_entries->resize(0);
                 matched_entries_lits->resize(0);
 
-                if (enable_trace) {
+                if (common.enable_trace) {
                     cout << "Iteration, Mlit: ";
-                    for (int i = 0; i < matched_lits->size(); i++) {
+                    for (size_t i = 0; i < matched_lits->size(); i++) {
                         cout << matched_lits->operator[](i) << " ";
                     }
                     cout << endl;
                 }
 
                 // foreach C in Mcls
-                for (int i = 0; i < matched_clauses->size(); i++) {
+                for (size_t i = 0; i < matched_clauses->size(); i++) {
                     int clause_idx = matched_clauses->operator[](i);
                     int clause_id = matched_clauses_id->operator[](i);
                     auto *clause = &clauses->operator[](clause_idx);
 
-                    if (enable_trace) {
+                    if (common.enable_trace) {
                         cout << "  Clause " << clause_idx << " (" << clause_id << "): ";
                         clause->print();
                     }
@@ -570,7 +561,7 @@ public:
 
                 std::vector<int> ties;
                 ties.reserve(16);
-                for (int i = 0; i < matched_entries_lits->size();) {
+                for (size_t i = 0; i < matched_entries_lits->size();) {
                     int lit = matched_entries_lits->operator[](i);
                     int count = 0;
 
@@ -579,7 +570,7 @@ public:
                         i++;
                     }
 
-                    if (enable_trace) {
+                    if (common.enable_trace) {
                         cout << "  " << lit << " count: " << count << endl;
                     }
 
@@ -607,7 +598,7 @@ public:
                 int current_reduction = reduction(prev_lit_count, prev_clause_count);
                 int new_reduction = reduction(new_lit_count, new_clause_count);
 
-                if (enable_trace) {
+                if (common.enable_trace) {
                     cout << "  lmax: " << lmax << " (" << lmax_count << ")" << endl;
                     cout << "  current_reduction: " << current_reduction << endl;
                     cout << "  new_reduction: " << new_reduction << endl;
@@ -618,9 +609,9 @@ public:
                 }
 
                 // Break ties
-                if (ties.size() > 1 && tiebreak_mode == Tiebreak::ThreeHop) {
+                if (ties.size() > 1 && tiebreak_mode == SBVA::Tiebreak::ThreeHop) {
                     int max_heuristic_val = tiebreaking_heuristic(var, ties[0]);
-                    for (int i=1; i<ties.size(); i++) {
+                    for (size_t i=1; i<ties.size(); i++) {
                         int h = tiebreaking_heuristic(var, ties[i]);
                         if (h > max_heuristic_val) {
                             max_heuristic_val = h;
@@ -655,14 +646,14 @@ public:
                 swap(matched_clauses, matched_clauses_swap);
                 swap(matched_clauses_id, matched_clauses_id_swap);
 
-                if (enable_trace) {
+                if (common.enable_trace) {
                     cout << "  Mcls: ";
-                    for (int i = 0; i < matched_clauses->size(); i++) {
+                    for (size_t i = 0; i < matched_clauses->size(); i++) {
                         cout << matched_clauses->operator[](i) << " ";
                     }
                     cout << endl;
                     cout << "  Mcls_id: ";
-                    for (int i = 0; i < matched_clauses_id->size(); i++) {
+                    for (size_t i = 0; i < matched_clauses_id->size(); i++) {
                         cout << matched_clauses_id->operator[](i) << " ";
                     }
                     cout << endl;
@@ -680,14 +671,14 @@ public:
             int matched_clause_count = matched_clauses->size();
             int matched_lit_count = matched_lits->size();
 
-            if (enable_trace) {
+            if (common.enable_trace) {
                 cout << "  mlits: ";
-                for (int i = 0; i < matched_lits->size(); i++) {
+                for (size_t i = 0; i < matched_lits->size(); i++) {
                     cout << matched_lits->operator[](i) << " ";
                 }
                 cout << endl;
                 cout << "  mclauses:\n";
-                for (int i = 0; i < matched_clauses->size(); i++) {
+                for (size_t i = 0; i < matched_clauses->size(); i++) {
                     clauses->operator[](matched_clauses->operator[](i)).print();
                 }
                 cout << endl;
@@ -726,7 +717,7 @@ public:
                 lit_to_clauses->operator[](lit_index(lit)).push_back(new_clause);
                 lit_to_clauses->operator[](lit_index(new_var)).push_back(new_clause);
 
-                if (generate_proof) {
+                if (common.generate_proof) {
                     auto proof_lits = vector<int>();
                     proof_lits.push_back(new_var); // new_var needs to be first for proof
                     proof_lits.push_back(lit);
@@ -752,7 +743,7 @@ public:
                 }
                 (*clauses)[new_clause] = cls;
 
-                if (generate_proof) {
+                if (common.generate_proof) {
                     proof->push_back(ProofClause(true, cls.lits));
                 }
             }
@@ -782,7 +773,7 @@ public:
                     lits_to_update.insert(lit);
                 }
 
-                if (generate_proof) {
+                if (common.generate_proof) {
                     proof->push_back(ProofClause(false, cls->lits));
                 }
             }
@@ -830,6 +821,7 @@ private:
     int num_clauses;
     int adj_deleted;
     vector<Clause> *clauses;
+    SBVA::Common common;
 
     // maps each literal to a vector of clauses that contain it
     vector< vector<int> > *lit_to_clauses;
@@ -865,9 +857,8 @@ void CNF::to_proof(FILE* file) {
     f->to_proof(file);
 }
 
-CNF parse_cnf(FILE* file) {
-    Formula* f = new Formula;
-    f->parse(file);
+CNF parse_cnf(FILE* file, Common common) {
+    auto f = Formula::parse(file, common);
     CNF cnf;
     cnf.data = (void*) f;
     return cnf;

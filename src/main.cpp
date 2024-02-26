@@ -21,13 +21,14 @@ THE SOFTWARE.
 ***********************************************/
 
 #include <cstdio>
+#include <cstdlib>
 #include <getopt.h>
 #include "sbva.h"
 
 using namespace SBVA;
 
-void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak) {
-    CNF f = parse_cnf(fin);
+void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Common common) {
+    CNF f = parse_cnf(fin, commmon);
     f.run(tiebreak);
     f.to_cnf(fout);
     if (fproof != NULL) {
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
     FILE *fout = stdout;
     FILE *fproof = NULL;
     Tiebreak tiebreak = Tiebreak::ThreeHop;
+    Common common;
 
     int opt;
     while ((opt = getopt(argc, argv, "p:i:o:t:s:vn")) != -1) {
@@ -60,7 +62,7 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 'p':
-                generate_proof = true;
+                common.generate_proof = true;
                 fproof = fopen(optarg, "w");
                 if (fin == NULL) {
                     fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
@@ -68,13 +70,13 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 't':
-                end_time = time(NULL) + atoi(optarg);
+                common.end_time = time(NULL) + std::atoi(optarg);
                 break;
             case 's':
-                max_replacements = atoi(optarg);
+                common.max_replacements = atoi(optarg);
                 break;
             case 'v':
-                enable_trace = true;
+                common.enable_trace = true;
                 break;
             case 'n':
                 tiebreak = Tiebreak::None;
@@ -85,5 +87,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    run_bva(fin, fout, fproof, tiebreak);
+    run_bva(fin, fout, fproof, tiebreak, common);
 }
