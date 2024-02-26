@@ -55,24 +55,24 @@ set_target_properties(sbva PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
-# add_executable (sbva-bin main.cpp)
+add_executable (sbva-bin main.cpp)
 
-# set(sbva_exec_link_libs sbva)
+set(sbva_exec_link_libs sbva)
 
-# IF (ZLIB_FOUND)
-#     SET(sbva_exec_link_libs ${sbva_exec_link_libs} ${ZLIB_LIBRARY})
-# ENDIF()
+IF (ZLIB_FOUND)
+    SET(sbva_exec_link_libs ${sbva_exec_link_libs} ${ZLIB_LIBRARY})
+ENDIF()
 
-# target_link_libraries(sbva-bin ${sbva_exec_link_libs})
+target_link_libraries(sbva-bin ${sbva_exec_link_libs})
 
-# if (NOT WIN32)
-#     set_target_properties(sbva-bin PROPERTIES
-#     OUTPUT_NAME sbva
-#     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
-#     INSTALL_RPATH_USE_LINK_PATH TRUE)
-# else()
-#     set_target_properties(sbva-bin PROPERTIES
-#     OUTPUT_NAME sbva-win
-#     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
-#     INSTALL_RPATH_USE_LINK_PATH TRUE)
-# endif()
+if (NOT WIN32)
+    set_target_properties(sbva-bin PROPERTIES
+    OUTPUT_NAME sbva
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+    INSTALL_RPATH_USE_LINK_PATH TRUE)
+else()
+    set_target_properties(sbva-bin PROPERTIES
+    OUTPUT_NAME sbva-win
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+    INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()

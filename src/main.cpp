@@ -28,7 +28,7 @@ THE SOFTWARE.
 using namespace SBVA;
 
 void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Common common) {
-    CNF f = parse_cnf(fin, commmon);
+    CNF f = parse_cnf(fin, common);
     f.run(tiebreak);
     f.to_cnf(fout);
     if (fproof != NULL) {

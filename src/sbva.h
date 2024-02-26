@@ -48,6 +48,6 @@ struct CNF {
     void* data = NULL;
 };
 
-CNF parse_cnf(FILE*);
+CNF parse_cnf(FILE* file, Common common);
 
 }
