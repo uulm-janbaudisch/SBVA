@@ -36,8 +36,11 @@ THE SOFTWARE.
 
 #include <Eigen/SparseCore>
 #include "murmur.h"
+#include "sbva.h"
 
 using namespace std;
+
+
 
 
 static bool enable_trace = 0;
@@ -839,3 +842,35 @@ private:
     // proof storage
     vector<ProofClause> *proof;
 };
+
+namespace SBVA {
+
+CNF::~CNF() {
+    Formula* f = (Formula*)data;
+    delete f;
+}
+
+void CNF::run(SBVA::Tiebreak t) {
+    Formula* f = (Formula*)data;
+    f->run(t);
+}
+
+void CNF::to_cnf(FILE* file) {
+    Formula* f = (Formula*)data;
+    f->to_cnf(file);
+}
+
+void CNF::to_proof(FILE* file) {
+    Formula* f = (Formula*)data;
+    f->to_proof(file);
+}
+
+CNF parse_cnf(FILE* file) {
+    Formula* f = new Formula;
+    f->parse(file);
+    CNF cnf;
+    cnf.data = (void*) f;
+    return cnf;
+}
+
+}

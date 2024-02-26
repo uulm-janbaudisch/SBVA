@@ -24,12 +24,14 @@ THE SOFTWARE.
 #include <getopt.h>
 #include "sbva.h"
 
-void runBVA(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak) {
-    Formula *f = Formula::parse(fin);
-    f->run(tiebreak);
-    f->to_cnf(fout);
+using namespace SBVA;
+
+void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak) {
+    CNF f = parse_cnf(fin);
+    f.run(tiebreak);
+    f.to_cnf(fout);
     if (fproof != NULL) {
-        f->to_proof(fproof);
+        f.to_proof(fproof);
     }
 }
 
@@ -83,5 +85,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    runBVA(fin, fout, fproof, tiebreak);
+    run_bva(fin, fout, fproof, tiebreak);
 }

@@ -21,7 +21,25 @@ THE SOFTWARE.
 ***********************************************/
 
 #pragma once
+
+#include <cstdio>
+
+namespace SBVA {
+
 enum Tiebreak {
     ThreeHop, // default
     None, // use sorted order (should be equivalent to original BVA)
 };
+
+struct CNF {
+    ~CNF();
+    void run(Tiebreak t);
+    void to_cnf(FILE*);
+    void to_proof(FILE*);
+
+    void* data;
+};
+
+CNF parse_cnf(FILE*);
+
+}
