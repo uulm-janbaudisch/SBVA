@@ -41,7 +41,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GitSHA1.cpp.in"
   "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" @ONLY)
 
 SET(SOURCES
-    sbva.cc
+    sbva.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp)
 
 ADD_LIBRARY(sbva ${SOURCES} ${LIB})
