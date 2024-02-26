@@ -142,11 +142,9 @@ public:
 
     Formula(SBVA::Common _common) : common(_common) { }
 
-    void init_cnf(uint32_t _num_vars, uint32_t _num_clauses) {
+    void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
-        num_clauses = _num_clauses;
-        clauses = new vector<Clause>(num_clauses);
-        clauses->reserve(num_clauses * 10);
+        clauses = new vector<Clause>;
         lit_to_clauses = new vector< vector<int> >(num_vars * 2);
         lit_count_adjust = new vector<int>(num_vars * 2);
         adjacency_matrix_width = num_vars * 4;
@@ -159,11 +157,7 @@ public:
 
     void add_cl(vector<int> cl_lits) {
         assert(found_header);
-        if (curr_clause >= num_clauses) {
-            fprintf(stderr, "Error: CNF file has more clauses than specified in header\n");
-            exit(1);
-        }
-
+        clauses->push_back(Clause());
         for(const auto& lit: cl_lits) {
             assert(lit != 0);
             if ((uint32_t)abs(lit) > num_vars) {
@@ -332,6 +326,20 @@ public:
             }
             fprintf(fout, "0\n");
         }
+    }
+
+    vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
+        vector<int> ret;
+        ret_num_cls = num_clauses -adj_deleted;
+        ret_num_vars = num_vars;
+        for (size_t i = 0; i < num_clauses; i++) {
+            if (clauses->operator[](i).deleted) continue;
+            for (int lit : clauses->operator[](i).lits) {
+                ret.push_back(lit);
+            }
+            ret.push_back(0);
+        }
+        return ret;
     }
 
     void to_proof(FILE *fproof) {
@@ -914,6 +922,11 @@ void CNF::to_cnf(FILE* file) {
 void CNF::to_proof(FILE* file) {
     Formula* f = (Formula*)data;
     f->to_proof(file);
+}
+
+vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
+    Formula* f = (Formula*)data;
+    return f->get_cnf(ret_num_vars, ret_num_cls);
 }
 
 CNF parse_cnf(FILE* file, Common common) {

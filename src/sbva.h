@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <cstdio>
 #include <ctime>
+#include <vector>
 #include <cstdint>
 
 namespace SBVA {
@@ -47,7 +48,13 @@ struct CNF {
     void to_cnf(FILE*);
     void to_proof(FILE*);
 
-    void* data = NULL;
+    // This is how to add a CNF clause by clause
+    void init_cnf(uint32_t num_vars);
+    void add_cl(std::vector<int> cl_lits);
+    void finish_cnf();
+    std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls);
+
+    void* data = nullptr;
 };
 
 CNF parse_cnf(FILE* file, Common common);
