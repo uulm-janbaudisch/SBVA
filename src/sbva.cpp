@@ -152,6 +152,8 @@ public:
     void add_cl(const vector<int>& cl_lits) {
         assert(found_header);
         clauses->push_back(Clause());
+        assert(curr_clause == clauses->size()-1);
+
         for(const auto& lit: cl_lits) {
             assert(lit != 0);
             if ((uint32_t)abs(lit) > num_vars) {
@@ -175,6 +177,7 @@ public:
         }
 
         curr_clause++;
+        num_clauses = curr_clause;
     }
 
     void finish_cnf() {
@@ -954,6 +957,7 @@ void CNF::init_cnf(uint32_t num_vars, Common common) {
     assert(data == nullptr);
     Formula* f = new Formula(common);
     f->init_cnf(num_vars);
+    data = (void*)f;
 }
 
 void CNF::add_cl(const std::vector<int>& cl_lits) {
@@ -971,7 +975,7 @@ void CNF::parse_cnf(FILE* file, Common common) {
     Formula* f = new Formula(common);
     f->read_cnf(file);
     CNF cnf;
-    data = (void*) f;
+    data = (void*)f;
 }
 
 }

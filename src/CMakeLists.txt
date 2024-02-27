@@ -56,6 +56,7 @@ set_target_properties(sbva PROPERTIES
 )
 
 add_executable (sbva-bin main.cpp)
+add_executable (test test.cpp)
 
 set(sbva_exec_link_libs sbva)
 
@@ -64,6 +65,12 @@ IF (ZLIB_FOUND)
 ENDIF()
 
 target_link_libraries(sbva-bin ${sbva_exec_link_libs})
+target_link_libraries(test sbva)
+
+set_target_properties(test PROPERTIES
+    OUTPUT_NAME test
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+)
 
 if (NOT WIN32)
     set_target_properties(sbva-bin PROPERTIES
