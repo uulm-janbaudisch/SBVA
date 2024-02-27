@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <cstdio>
 #include <ctime>
+#include <limits>
 #include <vector>
 #include <cstdint>
 
@@ -32,7 +33,7 @@ namespace SBVA {
 struct Config {
     bool enable_trace = 0;
     bool generate_proof = 0;
-    time_t end_time = 0;
+    int64_t steps = std::numeric_limits<int64_t>::max();
     unsigned int max_replacements = 0;
     bool preserve_model_cnt = 0;
 };
@@ -62,5 +63,8 @@ struct CNF {
     void* data = nullptr;
 };
 
+const char* get_version_tag();
+const char* get_version_sha1();
+const char* get_compilation_env();
 
 }

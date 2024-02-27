@@ -37,8 +37,11 @@ THE SOFTWARE.
 #include <Eigen/SparseCore>
 #include "murmur.h"
 #include "sbva.h"
+#include "GitSHA1.hpp"
 
 using namespace std;
+
+namespace SBVAImpl {
 
 struct Clause {
     bool deleted;
@@ -490,15 +493,15 @@ public:
 
         while (!pq.empty()) {
             // check timeout
-            if (config.end_time != 0) {
-                time_t curr = time(nullptr);
-                if (curr >= config.end_time) {
-                    if (config.enable_trace) {
-                        cout << "Timeout" << endl;
-                    }
-                    return;
-                }
-            }
+            /* if (config.end_time != 0) { */
+            /*     time_t curr = time(nullptr); */
+            /*     if (curr >= config.end_time) { */
+            /*         if (config.enable_trace) { */
+            /*             cout << "Timeout" << endl; */
+            /*         } */
+            /*         return; */
+            /*     } */
+            /* } */
 
             // check replacement limit
             if (config.max_replacements != 0 && num_replacements == config.max_replacements) {
@@ -931,7 +934,10 @@ private:
     vector<ProofClause> *proof;
 };
 
+}
+
 namespace SBVA {
+using namespace SBVAImpl;
 
 CNF::~CNF() {
     Formula* f = (Formula*)data;
@@ -982,6 +988,16 @@ void CNF::parse_cnf(FILE* file, Config config) {
     f->read_cnf(file);
     CNF cnf;
     data = (void*)f;
+}
+
+const char* get_version_tag() {
+    return SBVAImpl::get_version_tag();
+}
+const char* get_version_sha1() {
+    return SBVAImpl::get_version_sha1();
+}
+const char* get_compilation_env() {
+    return SBVAImpl::get_compilation_env();
 }
 
 }

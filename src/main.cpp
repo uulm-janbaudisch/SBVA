@@ -22,8 +22,23 @@ THE SOFTWARE.
 
 #include <cstdio>
 #include <cstdlib>
-#include <getopt.h>
+#include <ios>
+#include <iostream>
+#include <vector>
+#include <string>
 #include "sbva.h"
+#include "argparse.hpp"
+#include "time_mem.h"
+
+#if defined(__GNUC__) && defined(__linux__)
+#include <cfenv>
+#endif
+
+using std::string;
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::vector;
 
 using namespace SBVA;
 
@@ -35,59 +50,110 @@ void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config comm
     if (fproof != nullptr) f.to_proof(fproof);
 }
 
+argparse::ArgumentParser program = argparse::ArgumentParser("sbva");
 int main(int argc, char **argv) {
+    Config config;
+    FILE *fproof = nullptr;
+    Tiebreak tiebreak = Tiebreak::ThreeHop;
+
+    program.add_argument("-v", "--verb")
+        .action([&](const auto&) {config.enable_trace = true;})
+        .flag()
+        .help("Enable tracing");
+    program.add_argument("-p", "--proof")
+        .action([&](const auto& a) {
+                config.generate_proof = true;
+                fproof = fopen(a.c_str(), "w");
+                if (fproof == nullptr) {
+                std::cerr << "Error: Could not open file " << a << " for reading" << endl;
+                }
+        })
+        .help("Emit proof file here");
+    program.add_argument("-s", "--steps")
+        .action([&](const auto& a) {config.steps = std::atoi(a.c_str());})
+        .default_value(config.steps)
+        .help("Number of computation steps to do");
+    program.add_argument("-m", "--maxreplace")
+        .action([&](const auto& a) {config.max_replacements = std::atoi(a.c_str());})
+        .default_value(config.max_replacements)
+        .help("Maximum number of replacements to do. 0 = no limit");
+    program.add_argument("-n", "--normal")
+        .action([&](const auto&) {tiebreak = Tiebreak::None;})
+        .flag()
+        .help("Use original BVA tie-break. Runs BVA instead of SBVA");
+    program.add_argument("-c", "--countpreserve")
+        .action([&](const auto&) {config.preserve_model_cnt = true;})
+        .flag()
+        .help("Preserve model count. Adds additional clauses but allows the tool to be used in propositional model ");
+    program.add_argument("files").remaining().help("input file and output file");
+
+
+    #if defined(__GNUC__) && defined(__linux__)
+    feenableexcept(FE_INVALID   | FE_DIVBYZERO | FE_OVERFLOW);
+    #endif
+
+    //Reconstruct the command line so we can emit it later if needed
+    string command_line;
+    for(int i = 0; i < argc; i++) {
+        command_line += string(argv[i]);
+        if (i+1 < argc) command_line += " ";
+    }
+    cout << "c SBVA Version: " << SBVA::get_version_sha1() << endl;
+    cout << "c executed with command line: " << command_line << endl;
+
+    try {
+        program.parse_args(argc, argv);
+        if (program.is_used("--help")) {
+            cout
+            << "Structured Bounded Variable Addition CNF transformer" << endl << endl
+            << "sbva [options] [inputfile] [outputfile]" << endl;
+            cout << program << endl;
+            std::exit(0);
+        }
+    }
+    catch (const std::exception& err) {
+        std::cerr << err.what() << std::endl;
+        std::cerr << program;
+        exit(-1);
+    }
 
     FILE *fin = stdin;
     FILE *fout = stdout;
-    FILE *fproof = nullptr;
-    Tiebreak tiebreak = Tiebreak::ThreeHop;
-    Config config;
 
-    int opt;
-    while ((opt = getopt(argc, argv, "p:i:o:t:s:vnc")) != -1) {
-        switch (opt) {
-            case 'i':
-                fin = fopen(optarg, "r");
-                if (fin == nullptr) {
-                    fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
-                    return 1;
-                }
-                break;
-            case 'o':
-                fout = fopen(optarg, "w");
-                if (fout == nullptr) {
-                    fprintf(stderr, "Error: Could not open file %s for writing\n", optarg);
-                    return 1;
-                }
-                break;
-            case 'p':
-                config.generate_proof = true;
-                fproof = fopen(optarg, "w");
-                if (fin == nullptr) {
-                    fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
-                    return 1;
-                }
-                break;
-            case 't':
-                config.end_time = time(nullptr) + std::atoi(optarg);
-                break;
-            case 's':
-                config.max_replacements = atoi(optarg);
-                break;
-            case 'v':
-                config.enable_trace = true;
-                break;
-            case 'n':
-                tiebreak = Tiebreak::None;
-                break;
-           case 'c':
-                config.preserve_model_cnt = true;
-                break;
-            default:
-                fprintf(stderr, "Usage: %s [-i input] [-o output]\n", argv[0]);
-                return 1;
+    //parsing the input
+    vector<std::string> files;
+    try {
+        files = program.get<std::vector<std::string>>("files");
+        if (files.size() > 2) {
+            cout << "ERROR: you can only give at most two files, input and an output file" << endl;
+            exit(-1);
         }
+    } catch (std::logic_error& e) {
+        //exit(-1);
     }
 
+    auto my_time = cpuTime();
+    if (!files.empty()) {
+        const string in_fname = files[0];
+        fin = fopen(in_fname.c_str(), "r");
+        if (fin == nullptr) {
+            cerr << "Error: Could not open file " << in_fname << " for reading" << endl;
+            return 1;
+        }
+        cout << "c reading CNF from file " << in_fname << endl;
+    } else cout << "c reading from stdin..." << endl;
+
+    if (files.size() >= 2) {
+        const string out_fname = files[1];
+        fout = fopen(out_fname.c_str(), "w");
+        if (fout == nullptr) {
+            cerr << "Error: Could not open file " << out_fname << " for writing" << endl;
+            return 1;
+        }
+        cout << "c writing transformed CNF to file " << out_fname << endl;
+    } else cout << "c writing transformed CNF to stdout..." << endl;
+
     run_bva(fin, fout, fproof, tiebreak, config);
+    cout << "c SBVA Done. T: " << std::setprecision(2) << std::fixed
+           << (cpuTime() - my_time) << endl;
 }

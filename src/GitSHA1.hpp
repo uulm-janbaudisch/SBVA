@@ -1,5 +1,5 @@
 /******************************************
-Copyright (c) 2016, Mate Soos
+Copyright (c) 2024, Mate Soos
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,15 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ***********************************************/
 
-#ifndef GITSHA1_H
-#define GITSHA1_H
+#pragma once
 
-namespace GANAK {
+namespace SBVAImpl {
 
 const char* get_version_sha1();
 const char* get_version_tag();
 const char* get_compilation_env();
-
 }
-
-#endif //GITSHA1_H
