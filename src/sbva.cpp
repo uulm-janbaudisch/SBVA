@@ -750,7 +750,6 @@ public:
             int new_var = num_vars;
 
             // Prepare to add new clauses.
-            clauses->resize(num_clauses + matched_lit_count + matched_clause_count);
             clauses->resize(num_clauses + matched_lit_count + matched_clause_count + (common.preserve_model_cnt ? 1 : 0));
             lit_to_clauses->resize(num_vars * 2);
             lit_count_adjust->resize(num_vars * 2);
