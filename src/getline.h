@@ -36,8 +36,11 @@
 #include <cstdio>
 #include "getdelim.h"
 
-ssize_t
-getline2(char **buf, size_t *bufsiz, FILE *fp)
+#ifndef SSIZE_T
+#define SSIZE_T ssize_t
+#endif
+
+SSIZE_T getline2(char **buf, size_t *bufsiz, FILE *fp)
 {
 	return getdelim2(buf, bufsiz, '\n', fp);
 }

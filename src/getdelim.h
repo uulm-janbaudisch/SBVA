@@ -36,8 +36,11 @@
 #include <cstdio>
 #include <string>
 
-ssize_t
-getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
+#ifndef SSIZE_T
+#define SSIZE_T ssize_t
+#endif
+
+SSIZE_T getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {
 	char *ptr, *eptr;
 
@@ -52,7 +55,7 @@ getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 		int c = fgetc(fp);
 		if (c == -1) {
 			if (feof(fp)) {
-				ssize_t diff = (ssize_t)(ptr - *buf);
+				SSIZE_T diff = (SSIZE_T)(ptr - *buf);
 				if (diff != 0) {
 					*ptr = '\0';
 					return diff;
@@ -68,7 +71,7 @@ getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 		if (ptr + 2 >= eptr) {
 			char *nbuf;
 			size_t nbufsiz = *bufsiz * 2;
-			ssize_t d = ptr - *buf;
+			SSIZE_T d = ptr - *buf;
 			if ((nbuf = (char*)realloc(*buf, nbufsiz)) == NULL)
 				return -1;
 			*buf = nbuf;
