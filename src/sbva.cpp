@@ -944,7 +944,7 @@ private:
     vector< vector<int> > *lit_to_clauses;
     vector<int> *lit_count_adjust;
 
-    int adjacency_matrix_width;
+    uint32_t adjacency_matrix_width;
     vector< Eigen::SparseVector<int> > adjacency_matrix;
     map< int, int > tmp_heuristic_cache_full;
 

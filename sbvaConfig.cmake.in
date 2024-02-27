@@ -1,0 +1,20 @@
+# Config file for the @EXPORT_TYPE@ sbva Package
+# It defines the following variables
+#  SBVA_INCLUDE_DIRS - include directories for sbva
+#  SBVA_LIBRARIES    - libraries to link against
+#  SBVA_EXECUTABLE   - the sbva executable
+
+# Compute paths
+get_filename_component(SBVA_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(SBVA_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${SBVA_CMAKE_DIR}/@SBVA_TARGETS_FILENAME@")
+
+# These are IMPORTED targets created by @SBVA_TARGETS_FILENAME@
+set(SBVA_LIBRARIES sbva)
+set(SBVA_STATIC_LIBRARIES sbva)
+set(SBVA_STATIC_LIBRARIES_DEPS @SBVA_STATIC_DEPS@)
+set(SBVA_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(SBVA_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(SBVA_EXECUTABLE sbva)
