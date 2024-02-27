@@ -28,6 +28,8 @@ THE SOFTWARE.
 #include <limits>
 #include <vector>
 #include <cstdint>
+#include <utility>
+#include <functional>
 
 namespace SBVA {
 
@@ -48,7 +50,7 @@ struct CNF {
     ~CNF();
     void run(Tiebreak t);
 
-    void to_cnf(FILE*);
+    std::pair<int, int> to_cnf(FILE*);
     std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls);
 
     void to_proof(FILE*);

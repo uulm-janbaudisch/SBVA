@@ -43,12 +43,13 @@ using std::vector;
 
 using namespace SBVA;
 
-void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config& common) {
+auto run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config& common) {
     CNF f;
     f.parse_cnf(fin, common);
     f.run(tiebreak);
-    f.to_cnf(fout);
+    auto ret = f.to_cnf(fout);
     if (fproof != nullptr) f.to_proof(fproof);
+    return ret;
 }
 
 argparse::ArgumentParser program = argparse::ArgumentParser("sbva");
@@ -154,9 +155,9 @@ int main(int argc, char **argv) {
         cout << "c writing transformed CNF to file " << out_fname << endl;
     } else cout << "c writing transformed CNF to stdout..." << endl;
 
-    run_bva(fin, fout, fproof, tiebreak, config);
-    cout << "c SBVA Done. "
-           << " steps remainK: " << std::setprecision(2) << std::fixed << (double)config.steps/1000.0
+    auto ret = run_bva(fin, fout, fproof, tiebreak, config);
+    cout << "c SBVA Finished. Num vars now: " << ret.first << " num cls: " << ret.second << endl;
+    cout << "c steps remainK: " << std::setprecision(2) << std::fixed << (double)config.steps/1000.0
            << " T: " << std::setprecision(2) << std::fixed
            << (cpuTime() - my_time)
            << endl;

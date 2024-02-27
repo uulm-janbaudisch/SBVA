@@ -35,11 +35,14 @@ THE SOFTWARE.
 #include <iomanip>
 
 #include <cstdio>
+#include <utility>
+#include <functional>
 
 #include <Eigen/SparseCore>
 #include "murmur.h"
 #include "sbva.h"
 #include "GitSHA1.hpp"
+#include "getline.h"
 
 using namespace std;
 
@@ -201,7 +204,7 @@ public:
         cache = new ClauseCache;
 
         curr_clause = 0;
-        while (getline(&line, &len, fin) != -1) {
+        while (getline2(&line, &len, fin) != -1) {
             if (len == 0) {
                 continue;
             }
@@ -322,7 +325,7 @@ public:
         return total_count;
     }
 
-    void to_cnf(FILE *fout) {
+    auto to_cnf(FILE *fout) {
         fprintf(fout, "p cnf %lu %lu\n", num_vars, num_clauses - adj_deleted);
         for (size_t i = 0; i < num_clauses; i++) {
             if (clauses->operator[](i).deleted) {
@@ -333,6 +336,7 @@ public:
             }
             fprintf(fout, "0\n");
         }
+        return std::make_pair(num_vars, num_clauses-adj_deleted);
     }
 
     vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
@@ -967,9 +971,9 @@ void CNF::run(SBVA::Tiebreak t) {
     f->run(t);
 }
 
-void CNF::to_cnf(FILE* file) {
+std::pair<int, int> CNF::to_cnf(FILE* file) {
     Formula* f = (Formula*)data;
-    f->to_cnf(file);
+    return f->to_cnf(file);
 }
 
 void CNF::to_proof(FILE* file) {
