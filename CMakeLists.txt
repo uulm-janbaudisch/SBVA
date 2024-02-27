@@ -322,19 +322,6 @@ endif()
 # -----------------------------------------------------------------------------
 set(FPHSA_NAME_MISMATCHED 1) # Suppress warnings, see https://cmake.org/cmake/help/v3.17/module/FindPackageHandleStandardArgs.html
 
-option(NOZLIB "Don't use zlib" OFF)
-if (NOT NOZLIB AND NOT (STATICCOMPILE AND WIN32))
-    find_package(ZLIB)
-    IF (ZLIB_FOUND)
-        MESSAGE(STATUS "OK, Found ZLIB!")
-        include_directories(${ZLIB_INCLUDE_DIR})
-        link_directories(${ZLIB_LIB_DIR})
-        add_definitions( -DUSE_ZLIB )
-    ELSE (ZLIB_FOUND)
-        MESSAGE(STATUS "WARNING: Did not find ZLIB, gzipped file support will be disabled")
-    ENDIF (ZLIB_FOUND)
-endif()
-
 # add compile defines
 set(COMPILE_DEFINES)
 foreach( d ${DirDefs} )

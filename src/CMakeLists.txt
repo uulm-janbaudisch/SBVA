@@ -40,11 +40,9 @@ endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GitSHA1.cpp.in"
   "${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp" @ONLY)
 
-SET(SOURCES
+add_library(sbva
     sbva.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp)
-
-ADD_LIBRARY(sbva ${SOURCES} ${LIB})
 
 set_target_properties(sbva PROPERTIES
     PUBLIC_HEADER "${sbva_public_headers}"
@@ -57,13 +55,7 @@ set_target_properties(sbva PROPERTIES
 add_executable (sbva-bin main.cpp)
 add_executable (test test.cpp)
 
-set(sbva_exec_link_libs sbva)
-
-IF (ZLIB_FOUND)
-    SET(sbva_exec_link_libs ${sbva_exec_link_libs} ${ZLIB_LIBRARY})
-ENDIF()
-
-target_link_libraries(sbva-bin ${sbva_exec_link_libs})
+target_link_libraries(sbva-bin sbva)
 target_link_libraries(test sbva)
 
 set_target_properties(test PROPERTIES
