@@ -36,6 +36,10 @@
 #include <cstdio>
 #include <string>
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+#endif
+
 #ifndef SSIZE_T
 #define SSIZE_T ssize_t
 #endif
