@@ -43,7 +43,7 @@ Optional arguments:
   -p, --proof          Emit proof file here
   -s, --steps          Number of computation steps to do [default: 9223372036854775807]
   -m, --maxreplace     Maximum number of replacements to do. 0 = no limit [default: 0]
-  -n, --normal         Use original BVA tie-break. Runs BVA instead of SBV
+  -n, --normal         Use original BVA tie-break. Runs BVA instead of SBVA
   -c, --countpreserve  Preserve model count. Adds additional clauses but
                        allows the tool to be used in propositional model
 ```
