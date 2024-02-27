@@ -31,7 +31,7 @@ THE SOFTWARE.
 namespace SBVA {
 
 struct Config {
-    bool enable_trace = 0;
+    uint32_t verbosity = 0;
     bool generate_proof = 0;
     int64_t steps = std::numeric_limits<int64_t>::max();
     unsigned int max_replacements = 0;
@@ -53,10 +53,10 @@ struct CNF {
     void to_proof(FILE*);
 
     // Read in CNF from file
-    void parse_cnf(FILE* file, Config config);
+    void parse_cnf(FILE* file, Config& config);
 
     // This is how to add a CNF clause by clause
-    void init_cnf(uint32_t num_vars, Config config);
+    void init_cnf(uint32_t num_vars, Config& config);
     void add_cl(const std::vector<int>& cl_lits);
     void finish_cnf();
 

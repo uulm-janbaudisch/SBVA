@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <unordered_set>
 #include <tuple>
 #include <set>
+#include <iomanip>
 
 #include <cstdio>
 
@@ -52,14 +53,12 @@ struct Clause {
         deleted = false;
     }
 
-    void print() {
+    void print(const std::string extra = "") {
         if (deleted) {
-            printf("DELETED: ");
-        }
-        for (int lit : lits) {
-            printf("%d ", lit);
-        }
-        printf("\n");
+            cout << extra << "DELETED: ";
+        } else cout << extra;
+        for (int lit : lits) cout << lit << " ";
+        cout << endl;
     }
 
     uint32_t hash_val() const {
@@ -137,7 +136,7 @@ public:
         delete cache;
     }
 
-    Formula(SBVA::Config _config) : config(_config) { }
+    Formula(SBVA::Config& _config) : config(_config) { }
 
     void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
@@ -273,6 +272,7 @@ public:
         Eigen::SparseVector<int> vec(adjacency_matrix_width);
 
         for (int cid : (*lit_to_clauses)[lit_index(abslit)]) {
+            config.steps--;
             Clause *cls = &(*clauses)[cid];
             if (cls->deleted) continue;
             for (int v : cls->lits) {
@@ -281,6 +281,7 @@ public:
         }
 
         for (int cid : (*lit_to_clauses)[lit_index(-abslit)]) {
+            config.steps--;
             Clause *cls = &(*clauses)[cid];
             if (cls->deleted) continue;
             for (int v : cls->lits) {
@@ -305,6 +306,7 @@ public:
 
         int total_count = 0;
         for (int *varPtr = vec2->innerIndexPtr(); varPtr < vec2->innerIndexPtr() + vec2->nonZeros(); varPtr++) {
+            config.steps--;
             int var = sparcevec_lit_for_idx(*varPtr);
             int count = vec2->coeffRef(sparsevec_lit_idx(var));
             update_adjacency_matrix(var);
@@ -384,6 +386,7 @@ public:
         size_t idx_b = 0;
 
         while (idx_a < clause->lits.size() && idx_b < other->lits.size() && diff->size() <= max_diff) {
+            config.steps--;
             if (clause->lits[idx_a] == other->lits[idx_b]) {
                 idx_a++;
                 idx_b++;
@@ -493,19 +496,19 @@ public:
 
         while (!pq.empty()) {
             // check timeout
-            /* if (config.end_time != 0) { */
-            /*     time_t curr = time(nullptr); */
-            /*     if (curr >= config.end_time) { */
-            /*         if (config.enable_trace) { */
-            /*             cout << "Timeout" << endl; */
-            /*         } */
-            /*         return; */
-            /*     } */
-            /* } */
+            if (config.steps < 0 ) {
+                if (config.verbosity)
+                    cout << "c stopping SBVA due to timeout. time remainK: "
+                        << std::setprecision(2) << std::fixed << config.steps/1000.0 << endl;
+                return;
+            }
+            if (config.verbosity >= 2)
+                cout << "c time remainK: "
+                    << std::setprecision(2) << std::fixed << config.steps/1000.0 << endl;
 
             // check replacement limit
             if (config.max_replacements != 0 && num_replacements == config.max_replacements) {
-                if (config.enable_trace) {
+                if (config.verbosity) {
                     cout << "Hit replacement limit (" << config.max_replacements << ")" << endl;
                 }
                 return;
@@ -528,16 +531,16 @@ public:
                 continue;
             }
 
-            if (config.enable_trace) {
+            if (config.verbosity) {
                 cout << "Trying " << var << " (" << num_matched << ")" << endl;
             }
-
 
             // Mlit := { l }
             matched_lits->push_back(var);
 
             // Mcls := F[l]
             for (size_t i = 0; i < lit_to_clauses->operator[](lit_index(var)).size(); i++) {
+                config.steps--;
                 int clause_idx = lit_to_clauses->operator[](lit_index(var))[i];
                 if (!clauses->operator[](clause_idx).deleted) {
                     matched_clauses->push_back(clause_idx);
@@ -551,7 +554,7 @@ public:
                 matched_entries->resize(0);
                 matched_entries_lits->resize(0);
 
-                if (config.enable_trace) {
+                if (config.verbosity) {
                     cout << "Iteration, Mlit: ";
                     for (size_t i = 0; i < matched_lits->size(); i++) {
                         cout << matched_lits->operator[](i) << " ";
@@ -561,11 +564,12 @@ public:
 
                 // foreach C in Mcls
                 for (size_t i = 0; i < matched_clauses->size(); i++) {
+                    config.steps--;
                     int clause_idx = matched_clauses->operator[](i);
                     int clause_id = matched_clauses_id->operator[](i);
                     auto *clause = &clauses->operator[](clause_idx);
 
-                    if (config.enable_trace) {
+                    if (config.verbosity >= 3) {
                         cout << "  Clause " << clause_idx << " (" << clause_id << "): ";
                         clause->print();
                     }
@@ -578,6 +582,7 @@ public:
 
                     // foreach D in F[lmin]
                     for (auto other_idx : lit_to_clauses->operator[](lit_index(lmin))) {
+                        config.steps--;
                         auto *other = &clauses->operator[](other_idx);
                         if (other->deleted) {
                             continue;
@@ -619,6 +624,7 @@ public:
 
                 // lmax := most frequent literal in P
 
+                config.steps-= matched_entries_lits->size();
                 sort(matched_entries_lits->begin(), matched_entries_lits->end());
 
                 int lmax = 0;
@@ -631,11 +637,12 @@ public:
                     int count = 0;
 
                     while (i < matched_entries_lits->size() && matched_entries_lits->operator[](i) == lit) {
+                        config.steps--;
                         count++;
                         i++;
                     }
 
-                    if (config.enable_trace) {
+                    if (config.verbosity >= 3) {
                         cout << "  " << lit << " count: " << count << endl;
                     }
 
@@ -663,7 +670,7 @@ public:
                 int current_reduction = reduction(prev_lit_count, prev_clause_count);
                 int new_reduction = reduction(new_lit_count, new_clause_count);
 
-                if (config.enable_trace) {
+                if (config.verbosity) {
                     cout << "  lmax: " << lmax << " (" << lmax_count << ")" << endl;
                     cout << "  current_reduction: " << current_reduction << endl;
                     cout << "  new_reduction: " << new_reduction << endl;
@@ -677,6 +684,7 @@ public:
                 if (ties.size() > 1 && tiebreak_mode == SBVA::Tiebreak::ThreeHop) {
                     int max_heuristic_val = tiebreaking_heuristic(var, ties[0]);
                     for (size_t i=1; i<ties.size(); i++) {
+                        config.steps--;
                         int h = tiebreaking_heuristic(var, ties[i]);
                         if (h > max_heuristic_val) {
                             max_heuristic_val = h;
@@ -695,6 +703,7 @@ public:
 
                 int insert_idx = 0;
                 for (auto pair : *matched_entries) {
+                    config.steps--;
                     int lit = get<0>(pair);
                     if (lit != lmax) continue;
 
@@ -711,7 +720,7 @@ public:
                 swap(matched_clauses, matched_clauses_swap);
                 swap(matched_clauses_id, matched_clauses_id_swap);
 
-                if (config.enable_trace) {
+                if (config.verbosity) {
                     cout << "  Mcls: ";
                     for (size_t i = 0; i < matched_clauses->size(); i++) {
                         cout << matched_clauses->operator[](i) << " ";
@@ -736,7 +745,7 @@ public:
             int matched_clause_count = matched_clauses->size();
             int matched_lit_count = matched_lits->size();
 
-            if (config.enable_trace) {
+            if (config.verbosity) {
                 cout << "  mlits: ";
                 for (size_t i = 0; i < matched_lits->size(); i++) {
                     cout << matched_lits->operator[](i) << " ";
@@ -744,7 +753,7 @@ public:
                 cout << endl;
                 cout << "  mclauses:\n";
                 for (size_t i = 0; i < matched_clauses->size(); i++) {
-                    clauses->operator[](matched_clauses->operator[](i)).print();
+                    clauses->operator[](matched_clauses->operator[](i)).print("   -> ");
                 }
                 cout << endl;
 
@@ -777,6 +786,7 @@ public:
 
             // Add (f, lit) clauses.
             for (int i = 0; i < matched_lit_count; ++i) {
+                config.steps--;
                 int lit = matched_lits->operator[](i);
                 int new_clause = num_clauses + i;
 
@@ -798,6 +808,7 @@ public:
 
             // Add (-f, ...) clauses.
             for (int i = 0; i < matched_clause_count; ++i) {
+                config.steps--;
                 int clause_idx = (*matched_clauses)[i];
                 auto new_clause = num_clauses + matched_lit_count + i;
 
@@ -847,6 +858,7 @@ public:
 
             set<int> valid_clause_ids;
             for (int i = 0; i < matched_clause_count; ++i) {
+                config.steps--;
                 valid_clause_ids.insert((*matched_clauses_id)[i]);
             }
 
@@ -866,6 +878,7 @@ public:
                 cls->deleted = true;
                 removed_clause_count += 1;
                 for (auto lit : cls->lits) {
+                    config.steps--;
                     lit_count_adjust->operator[](lit_index(lit)) -= 1;
                     lits_to_update.insert(lit);
                 }
@@ -919,7 +932,7 @@ private:
     size_t curr_clause = 0;
     int adj_deleted = 0;
     vector<Clause> *clauses;
-    SBVA::Config config;
+    SBVA::Config& config;
     ClauseCache* cache = nullptr;
 
     // maps each literal to a vector of clauses that contain it
@@ -965,7 +978,7 @@ vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
 }
 
 
-void CNF::init_cnf(uint32_t num_vars, Config config) {
+void CNF::init_cnf(uint32_t num_vars, Config& config) {
     assert(data == nullptr);
     Formula* f = new Formula(config);
     f->init_cnf(num_vars);
@@ -982,7 +995,7 @@ void CNF::finish_cnf() {
     f->finish_cnf();
 }
 
-void CNF::parse_cnf(FILE* file, Config config) {
+void CNF::parse_cnf(FILE* file, Config& config) {
     assert(data == nullptr);
     Formula* f = new Formula(config);
     f->read_cnf(file);

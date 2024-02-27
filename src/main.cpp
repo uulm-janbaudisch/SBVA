@@ -42,7 +42,7 @@ using std::vector;
 
 using namespace SBVA;
 
-void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config common) {
+void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config& common) {
     CNF f;
     f.parse_cnf(fin, common);
     f.run(tiebreak);
@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
     Tiebreak tiebreak = Tiebreak::ThreeHop;
 
     program.add_argument("-v", "--verb")
-        .action([&](const auto&) {config.enable_trace = true;})
-        .flag()
+        .action([&](const auto& a) {config.verbosity = std::atoi(a.c_str());})
+        .default_value(config.verbosity)
         .help("Enable tracing");
     program.add_argument("-p", "--proof")
         .action([&](const auto& a) {
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
         })
         .help("Emit proof file here");
     program.add_argument("-s", "--steps")
-        .action([&](const auto& a) {config.steps = std::atoi(a.c_str());})
+        .action([&](const auto& a) {config.steps = 1e5 * std::atoll(a.c_str());})
         .default_value(config.steps)
         .help("Number of computation steps to do");
     program.add_argument("-m", "--maxreplace")
@@ -154,6 +154,9 @@ int main(int argc, char **argv) {
     } else cout << "c writing transformed CNF to stdout..." << endl;
 
     run_bva(fin, fout, fproof, tiebreak, config);
-    cout << "c SBVA Done. T: " << std::setprecision(2) << std::fixed
-           << (cpuTime() - my_time) << endl;
+    cout << "c SBVA Done. "
+           << " steps remainK: " << std::setprecision(2) << std::fixed << (double)config.steps/1000.0
+           << " T: " << std::setprecision(2) << std::fixed
+           << (cpuTime() - my_time)
+           << endl;
 }
