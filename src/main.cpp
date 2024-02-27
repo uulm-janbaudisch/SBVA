@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
     FILE *fin = stdin;
     FILE *fout = stdout;
-    FILE *fproof = NULL;
+    FILE *fproof = nullptr;
     Tiebreak tiebreak = Tiebreak::ThreeHop;
     Common common;
 
@@ -48,14 +48,14 @@ int main(int argc, char **argv) {
         switch (opt) {
             case 'i':
                 fin = fopen(optarg, "r");
-                if (fin == NULL) {
+                if (fin == nullptr) {
                     fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
                     return 1;
                 }
                 break;
             case 'o':
                 fout = fopen(optarg, "w");
-                if (fout == NULL) {
+                if (fout == nullptr) {
                     fprintf(stderr, "Error: Could not open file %s for writing\n", optarg);
                     return 1;
                 }
@@ -63,13 +63,13 @@ int main(int argc, char **argv) {
             case 'p':
                 common.generate_proof = true;
                 fproof = fopen(optarg, "w");
-                if (fin == NULL) {
+                if (fin == nullptr) {
                     fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
                     return 1;
                 }
                 break;
             case 't':
-                common.end_time = time(NULL) + std::atoi(optarg);
+                common.end_time = time(nullptr) + std::atoi(optarg);
                 break;
             case 's':
                 common.max_replacements = atoi(optarg);
