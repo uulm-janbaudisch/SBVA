@@ -89,5 +89,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    run_bva(fin, fout, fproof, tiebreak, common);
+    run_bva(fin, fout, fproof, tiebreak, config);
 }
