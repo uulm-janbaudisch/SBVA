@@ -340,6 +340,21 @@ foreach( d ${DirDefs} )
 endforeach()
 message(STATUS "All defines at startup: ${COMPILE_DEFINES}")
 
+macro(sbva_add_public_header LIBTARGET HEADER)
+    get_target_property(EXISTING_PUBLIC_HEADERS ${LIBTARGET} PUBLIC_HEADER)
+    if(EXISTING_PUBLIC_HEADERS)
+        list(APPEND EXISTING_PUBLIC_HEADERS "${HEADER}")
+    else()
+        # Do not append to empty list
+        set(EXISTING_PUBLIC_HEADERS "${HEADER}")
+    endif()
+    set_target_properties(
+        ${LIBTARGET}
+        PROPERTIES
+        PUBLIC_HEADER "${EXISTING_PUBLIC_HEADERS}"
+     )
+endmacro()
+
 # -----------------------------------------------------------------------------
 # Add GIT version
 # -----------------------------------------------------------------------------
@@ -369,4 +384,98 @@ MESSAGE(STATUS "PROJECT_VERSION_MAJOR: ${PROJECT_VERSION_MAJOR}")
 MESSAGE(STATUS "PROJECT_VERSION_MINOR: ${PROJECT_VERSION_MINOR}")
 MESSAGE(STATUS "PROJECT_VERSION_PATCH: ${PROJECT_VERSION_PATCH}")
 
+# ----------
+# manpage
+# ----------
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND NOT EMSCRIPTEN)
+    find_program(HELP2MAN_FOUND help2man)
+    if (HELP2MAN_FOUND)
+        ADD_CUSTOM_TARGET(man_sbva
+            ALL
+            DEPENDS sbva-bin
+        )
+
+        ADD_CUSTOM_COMMAND(
+            TARGET man_sbva
+            COMMAND help2man
+            ARGS --version-string=${SBVA_FULL_VERSION} --help-option="-h" $<TARGET_FILE:sbva-bin> -o ${CMAKE_CURRENT_BINARY_DIR}/sbva.1
+        )
+
+        INSTALL(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/sbva.1
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man1)
+
+        message(STATUS "Manpage will be created and installed")
+    else()
+        MESSAGE(STATUS "Cannot find help2man, not creating manpage")
+    endif()
+else()
+    MESSAGE(STATUS "Not on Linux, not creating manpage")
+endif()
+
+# -----------------------------------------------------------------------------
+# Provide an export name to be used by targets that wish to export themselves.
+# -----------------------------------------------------------------------------
+set(SBVA_EXPORT_NAME "sbvaTargets")
+
 add_subdirectory(src)
+
+# -----------------------------------------------------------------------------
+# Add uninstall target for makefiles
+# -----------------------------------------------------------------------------
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY
+)
+
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake
+)
+
+# -----------------------------------------------------------------------------
+# Export our targets so that other CMake based projects can interface with
+# the build of sbva in the build-tree
+# -----------------------------------------------------------------------------
+set(SBVA_TARGETS_FILENAME "sbvaTargets.cmake")
+set(SBVA_CONFIG_FILENAME "sbvaConfig.cmake")
+
+# Export targets
+set(MY_TARGETS sbva)
+export(
+    TARGETS ${MY_TARGETS}
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/${SBVA_TARGETS_FILENAME}"
+)
+
+# Create sbvaConfig file
+set(EXPORT_TYPE "Build-tree")
+set(CONF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/include")
+configure_file(sbvaConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/${SBVA_CONFIG_FILENAME}" @ONLY
+)
+
+# Export this package to the CMake user package registry
+# Now the user can just use find_package(sbva) on their system
+export(PACKAGE sbva)
+
+set(DEF_INSTALL_CMAKE_DIR lib/cmake/sbva)
+set(SBVA_INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+    "Installation directory for sbva CMake files")
+
+# Create sbvaConfig file
+set(EXPORT_TYPE "installed")
+set(CONF_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+configure_file(sbvaConfig.cmake.in
+   "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${SBVA_CONFIG_FILENAME}" @ONLY
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${SBVA_CONFIG_FILENAME}"
+    DESTINATION "${SBVA_INSTALL_CMAKE_DIR}"
+)
+
+# Install the export set for use with the install-tree
+install(
+    EXPORT ${SBVA_EXPORT_NAME}
+    DESTINATION "${SBVA_INSTALL_CMAKE_DIR}"
+)

@@ -83,3 +83,40 @@ else()
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
     INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
+
+sbva_add_public_header(sbva ${CMAKE_CURRENT_SOURCE_DIR}/sbva.h )
+
+# -----------------------------------------------------------------------------
+# Copy public headers into build directory include directory.
+# The sbvaConfig.cmake we generate in the build directory depends on
+# this.
+# -----------------------------------------------------------------------------
+set(HEADER_DEST "${PROJECT_BINARY_DIR}/include/sbva")
+add_custom_target(CopyPublicHeaders ALL)
+get_target_property(sbva_public_headers sbva PUBLIC_HEADER)
+foreach(public_header ${sbva_public_headers})
+    get_filename_component(HEADER_NAME ${public_header} NAME)
+    add_custom_command(TARGET CopyPublicHeaders PRE_BUILD
+                       COMMAND ${CMAKE_COMMAND} -E make_directory
+                               "${HEADER_DEST}"
+                       COMMAND ${CMAKE_COMMAND} -E echo
+                       "Copying ${HEADER_NAME} to ${HEADER_DEST}"
+                       COMMAND ${CMAKE_COMMAND} -E
+                           copy_if_different
+                           ${public_header}
+                           "${HEADER_DEST}"
+                      )
+endforeach()
+
+install(TARGETS sbva
+    EXPORT ${SBVA_EXPORT_NAME}
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/sbva"
+)
+
+install(TARGETS sbva-bin
+    EXPORT ${SBVA_EXPORT_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
