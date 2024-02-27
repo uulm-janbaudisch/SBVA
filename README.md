@@ -11,13 +11,17 @@ deterministic timeout via steps. It also has a manual page, and has better help.
 ## Build
 
 ```
-mkdir build
-cd build
+git clone https://github.com/meelgroup/SBVA
+mkdir build && cd build
 cmake ..
-make
+make -j8
+sudo make install
 ```
 
 ## Usage
+
+```
+```
 
 ```
 Usage: sbva [options] input output

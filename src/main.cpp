@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
     auto ret = run_bva(fin, fout, fproof, tiebreak, config);
     cout << "c SBVA Finished. Num vars now: " << ret.first << " num cls: " << ret.second << endl;
     cout << "c steps remainK: " << std::setprecision(2) << std::fixed << (double)config.steps/1000.0
+           << " Timeout: " << (config.steps <= 0 ? "Yes" : "No")
            << " T: " << std::setprecision(2) << std::fixed
            << (cpuTime() - my_time)
            << endl;
