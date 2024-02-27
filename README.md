@@ -20,10 +20,17 @@ sudo make install
 
 ## Usage
 
-```
+```shell
+$ ./sbva -s 20 mizh-md5-47-3.cnf simplified.cnf
+c SBVA Version: 23b96710558480e04bb30289bc40f0ef46483abf
+c executed with command line: ./sbva -s 20 mizh-md5-47-3.cnf simplified.cnf
+c reading CNF from file mizh-md5-47-3.cnf
+c writing transformed CNF to file simplified.cnf
+c SBVA Finished. Num vars now: 65635 num cls: 273366
+c steps remainK: -93.31 Timeout: Yes T: 1.79
 ```
 
-```
+```shell
 Usage: sbva [options] input output
 
 Positional arguments:
@@ -32,26 +39,17 @@ Positional arguments:
 Optional arguments:
   -h, --help           shows help message and exits
   -v, --version        prints version information and exits
-  -v, --verb           Enable tracing [nargs=0..1] [default: 0]
+  -v, --verb           Enable tracing [default: 0]
   -p, --proof          Emit proof file here
-  -s, --steps          Number of computation steps to do [nargs=0..1] [default: 9223372036854775807]
-  -m, --maxreplace     Maximum number of replacements to do. 0 = no limit [nargs=0..1] [default: 0]
+  -s, --steps          Number of computation steps to do [default: 9223372036854775807]
+  -m, --maxreplace     Maximum number of replacements to do. 0 = no limit [default: 0]
   -n, --normal         Use original BVA tie-break. Runs BVA instead of SBV
   -c, --countpreserve  Preserve model count. Adds additional clauses but
                        allows the tool to be used in propositional model
 ```
 
-Examples:
-
-```sh
-# Reduce a formula
-./sbva problem.cnf out.cnf
-
-# Reduce a formula and generate a proof
-./sbva -p proof.drat problem.cnf out.cnf
-```
-
 ## Authors
 
 SBVA was developed by Andrew Haberlandt and Harrison Green with advice from Marijn Heule.
+
 This version of SBVA has been messed around by Mate Soos
