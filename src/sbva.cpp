@@ -1,5 +1,6 @@
 /******************************************
 Copyright (C) 2023 Andrew Haberlandt, Harrison Green, Marijn J.H. Heule
+              2024 Changes, maybe bugs by Mate Soos
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
