@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 'p':
-                common.generate_proof = true;
+                config.generate_proof = true;
                 fproof = fopen(optarg, "w");
                 if (fin == nullptr) {
                     fprintf(stderr, "Error: Could not open file %s for reading\n", optarg);
@@ -69,19 +69,19 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 't':
-                common.end_time = time(nullptr) + std::atoi(optarg);
+                config.end_time = time(nullptr) + std::atoi(optarg);
                 break;
             case 's':
-                common.max_replacements = atoi(optarg);
+                config.max_replacements = atoi(optarg);
                 break;
             case 'v':
-                common.enable_trace = true;
+                config.enable_trace = true;
                 break;
             case 'n':
                 tiebreak = Tiebreak::None;
                 break;
            case 'c':
-                common.preserve_model_cnt = true;
+                config.preserve_model_cnt = true;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-i input] [-o output]\n", argv[0]);

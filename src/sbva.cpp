@@ -134,7 +134,7 @@ public:
         delete cache;
     }
 
-    Formula(SBVA::Config _common) : common(_common) { }
+    Formula(SBVA::Config _config) : config(_config) { }
 
     void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
@@ -480,7 +480,7 @@ public:
         unordered_set<int> lits_to_update;
         lits_to_update.reserve(10000);
 
-        if (common.generate_proof) {
+        if (config.generate_proof) {
             proof = new vector<ProofClause>();
         }
 
@@ -490,10 +490,10 @@ public:
 
         while (!pq.empty()) {
             // check timeout
-            if (common.end_time != 0) {
+            if (config.end_time != 0) {
                 time_t curr = time(nullptr);
-                if (curr >= common.end_time) {
-                    if (common.enable_trace) {
+                if (curr >= config.end_time) {
+                    if (config.enable_trace) {
                         cout << "Timeout" << endl;
                     }
                     return;
@@ -501,9 +501,9 @@ public:
             }
 
             // check replacement limit
-            if (common.max_replacements != 0 && num_replacements == common.max_replacements) {
-                if (common.enable_trace) {
-                    cout << "Hit replacement limit (" << common.max_replacements << ")" << endl;
+            if (config.max_replacements != 0 && num_replacements == config.max_replacements) {
+                if (config.enable_trace) {
+                    cout << "Hit replacement limit (" << config.max_replacements << ")" << endl;
                 }
                 return;
             }
@@ -525,7 +525,7 @@ public:
                 continue;
             }
 
-            if (common.enable_trace) {
+            if (config.enable_trace) {
                 cout << "Trying " << var << " (" << num_matched << ")" << endl;
             }
 
@@ -548,7 +548,7 @@ public:
                 matched_entries->resize(0);
                 matched_entries_lits->resize(0);
 
-                if (common.enable_trace) {
+                if (config.enable_trace) {
                     cout << "Iteration, Mlit: ";
                     for (size_t i = 0; i < matched_lits->size(); i++) {
                         cout << matched_lits->operator[](i) << " ";
@@ -562,7 +562,7 @@ public:
                     int clause_id = matched_clauses_id->operator[](i);
                     auto *clause = &clauses->operator[](clause_idx);
 
-                    if (common.enable_trace) {
+                    if (config.enable_trace) {
                         cout << "  Clause " << clause_idx << " (" << clause_id << "): ";
                         clause->print();
                     }
@@ -632,7 +632,7 @@ public:
                         i++;
                     }
 
-                    if (common.enable_trace) {
+                    if (config.enable_trace) {
                         cout << "  " << lit << " count: " << count << endl;
                     }
 
@@ -660,7 +660,7 @@ public:
                 int current_reduction = reduction(prev_lit_count, prev_clause_count);
                 int new_reduction = reduction(new_lit_count, new_clause_count);
 
-                if (common.enable_trace) {
+                if (config.enable_trace) {
                     cout << "  lmax: " << lmax << " (" << lmax_count << ")" << endl;
                     cout << "  current_reduction: " << current_reduction << endl;
                     cout << "  new_reduction: " << new_reduction << endl;
@@ -708,7 +708,7 @@ public:
                 swap(matched_clauses, matched_clauses_swap);
                 swap(matched_clauses_id, matched_clauses_id_swap);
 
-                if (common.enable_trace) {
+                if (config.enable_trace) {
                     cout << "  Mcls: ";
                     for (size_t i = 0; i < matched_clauses->size(); i++) {
                         cout << matched_clauses->operator[](i) << " ";
@@ -733,7 +733,7 @@ public:
             int matched_clause_count = matched_clauses->size();
             int matched_lit_count = matched_lits->size();
 
-            if (common.enable_trace) {
+            if (config.enable_trace) {
                 cout << "  mlits: ";
                 for (size_t i = 0; i < matched_lits->size(); i++) {
                     cout << matched_lits->operator[](i) << " ";
@@ -754,7 +754,7 @@ public:
 
             // Prepare to add new clauses.
             uint32_t new_sz = num_clauses + matched_lit_count + matched_clause_count +
-                (common.preserve_model_cnt ? 1 : 0);
+                (config.preserve_model_cnt ? 1 : 0);
             if (clauses->size() >= new_sz) clauses->resize(new_sz);
             else clauses->insert(clauses->end(), new_sz - clauses->size(), Clause());
 
@@ -783,7 +783,7 @@ public:
                 lit_to_clauses->operator[](lit_index(lit)).push_back(new_clause);
                 lit_to_clauses->operator[](lit_index(new_var)).push_back(new_clause);
 
-                if (common.generate_proof) {
+                if (config.generate_proof) {
                     auto proof_lits = vector<int>();
                     proof_lits.push_back(new_var); // new_var needs to be first for proof
                     proof_lits.push_back(lit);
@@ -809,7 +809,7 @@ public:
                 }
                 (*clauses)[new_clause] = cls;
 
-                if (common.generate_proof) {
+                if (config.generate_proof) {
                     proof->push_back(ProofClause(true, cls.lits));
                 }
             }
@@ -821,7 +821,7 @@ public:
             // all(matches_clauses) are satisfied.
             //
             // The easiest way to fix this is to add one clause that constrains all(matched_lits) => -f
-            if (common.preserve_model_cnt) {
+            if (config.preserve_model_cnt) {
                 int new_clause = num_clauses + matched_lit_count + matched_clause_count;
                 auto cls = Clause();
                 cls.lits.push_back(-new_var);
@@ -834,7 +834,7 @@ public:
                 (*clauses)[new_clause] = cls;
                 (*lit_to_clauses)[(lit_index(-new_var))].push_back(new_clause);
 
-                if (common.generate_proof) {
+                if (config.generate_proof) {
                     proof->push_back(ProofClause(true, cls.lits));
                 }
             }
@@ -865,13 +865,13 @@ public:
                     lits_to_update.insert(lit);
                 }
 
-                if (common.generate_proof) {
+                if (config.generate_proof) {
                     proof->push_back(ProofClause(false, cls->lits));
                 }
             }
 
             adj_deleted += removed_clause_count;
-            num_clauses += matched_lit_count + matched_clause_count + (common.preserve_model_cnt ? 1 : 0);
+            num_clauses += matched_lit_count + matched_clause_count + (config.preserve_model_cnt ? 1 : 0);
 
             // Update priorities.
             for (auto lit : lits_to_update) {
@@ -914,7 +914,7 @@ private:
     size_t curr_clause = 0;
     int adj_deleted = 0;
     vector<Clause> *clauses;
-    SBVA::Config common;
+    SBVA::Config config;
     ClauseCache* cache = nullptr;
 
     // maps each literal to a vector of clauses that contain it
@@ -957,9 +957,9 @@ vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
 }
 
 
-void CNF::init_cnf(uint32_t num_vars, Config common) {
+void CNF::init_cnf(uint32_t num_vars, Config config) {
     assert(data == nullptr);
-    Formula* f = new Formula(common);
+    Formula* f = new Formula(config);
     f->init_cnf(num_vars);
     data = (void*)f;
 }
@@ -974,9 +974,9 @@ void CNF::finish_cnf() {
     f->finish_cnf();
 }
 
-void CNF::parse_cnf(FILE* file, Config common) {
+void CNF::parse_cnf(FILE* file, Config config) {
     assert(data == nullptr);
-    Formula* f = new Formula(common);
+    Formula* f = new Formula(config);
     f->read_cnf(file);
     CNF cnf;
     data = (void*)f;
