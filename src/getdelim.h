@@ -36,13 +36,12 @@
 #include <cstdio>
 #include <string>
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #include <BaseTsd.h>
-#else
-#define SSIZE_T ssize_t
+typedef SSIZE_T ssize_t;
 #endif
 
-SSIZE_T getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
+ssize_t getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 {
 	char *ptr, *eptr;
 
@@ -57,7 +56,7 @@ SSIZE_T getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 		int c = fgetc(fp);
 		if (c == -1) {
 			if (feof(fp)) {
-				SSIZE_T diff = (SSIZE_T)(ptr - *buf);
+				ssize_t diff = (ssize_t)(ptr - *buf);
 				if (diff != 0) {
 					*ptr = '\0';
 					return diff;
@@ -73,7 +72,7 @@ SSIZE_T getdelim2(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
 		if (ptr + 2 >= eptr) {
 			char *nbuf;
 			size_t nbufsiz = *bufsiz * 2;
-			SSIZE_T d = ptr - *buf;
+			ssize_t d = ptr - *buf;
 			if ((nbuf = (char*)realloc(*buf, nbufsiz)) == NULL)
 				return -1;
 			*buf = nbuf;

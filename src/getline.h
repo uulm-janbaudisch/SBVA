@@ -36,13 +36,12 @@
 #include <cstdio>
 #include "getdelim.h"
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #include <BaseTsd.h>
-#else
-#define SSIZE_T ssize_t
+typedef SSIZE_T ssize_t;
 #endif
 
-SSIZE_T getline2(char **buf, size_t *bufsiz, FILE *fp)
+ssize_t getline2(char **buf, size_t *bufsiz, FILE *fp)
 {
 	return getdelim2(buf, bufsiz, '\n', fp);
 }
