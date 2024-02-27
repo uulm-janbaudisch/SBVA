@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
         })
         .help("Emit proof file here");
     program.add_argument("-s", "--steps")
-        .action([&](const auto& a) {config.steps = 1e5 * std::atoll(a.c_str());})
+        .action([&](const auto& a) {config.steps = 1e6 * std::atoll(a.c_str());})
         .default_value(config.steps)
         .help("Number of computation steps to do");
     program.add_argument("-m", "--maxreplace")

@@ -162,6 +162,7 @@ public:
                 fprintf(stderr, "Error: CNF file has a variable that is greater than the number of variables specified in the header\n");
                 exit(1);
             }
+            config.steps--;
             clauses->operator[](curr_clause).lits.push_back(lit);
         }
 
@@ -174,6 +175,7 @@ public:
         } else {
             cache->add(cls);
             for (auto l : clauses->operator[](curr_clause).lits) {
+                config.steps--;
                 lit_to_clauses->operator[](lit_index(l)).push_back(curr_clause);
             }
         }
@@ -234,6 +236,7 @@ public:
                         fprintf(stderr, "Error: CNF file has a variable that is greater than the number of variables specified in the header\n");
                         exit(1);
                     }
+                    config.steps--;
                     clauses->operator[](curr_clause).lits.push_back(lit);
                     curr = strchr(curr, ' ');
                     curr++;
@@ -248,6 +251,7 @@ public:
                 } else {
                     cache->add(cls);
                     for (auto l : clauses->operator[](curr_clause).lits) {
+                        config.steps--;
                         lit_to_clauses->operator[](lit_index(l)).push_back(curr_clause);
                     }
                 }
