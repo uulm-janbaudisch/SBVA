@@ -747,6 +747,8 @@ public:
 
                 cout << "--------------------" << endl;
             }
+            assert(lit_to_clauses->size() == num_vars*2);
+            assert(lit_count_adjust->size() == num_vars*2);
 
             // Do the substitution
             num_vars += 1;
@@ -758,8 +760,8 @@ public:
             if (clauses->size() >= new_sz) clauses->resize(new_sz);
             else clauses->insert(clauses->end(), new_sz - clauses->size(), Clause());
 
-            lit_to_clauses->resize(num_vars * 2);
-            lit_count_adjust->resize(num_vars * 2);
+            lit_to_clauses->insert(lit_to_clauses->end(), 2, vector<int>());
+            lit_count_adjust->insert(lit_count_adjust->end(), 2, 0);
             if (sparsevec_lit_idx(new_var) >= adjacency_matrix_width) {
                 // The vectors must be constructed with a fixed, pre-determined width.
                 //
