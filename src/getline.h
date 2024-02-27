@@ -36,7 +36,9 @@
 #include <cstdio>
 #include "getdelim.h"
 
-#ifndef SSIZE_T
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+#else
 #define SSIZE_T ssize_t
 #endif
 

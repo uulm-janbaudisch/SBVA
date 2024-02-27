@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
         if (i+1 < argc) command_line += " ";
     }
     cout << "c SBVA Version: " << SBVA::get_version_sha1() << endl;
+    cout << "c SBVA compilation env: " << SBVA::get_compilation_env() << endl;
     cout << "c executed with command line: " << command_line << endl;
 
     try {

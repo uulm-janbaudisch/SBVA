@@ -38,9 +38,7 @@
 
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
-#endif
-
-#ifndef SSIZE_T
+#else
 #define SSIZE_T ssize_t
 #endif
 
