@@ -134,7 +134,7 @@ public:
         delete cache;
     }
 
-    Formula(SBVA::Common _common) : common(_common) { }
+    Formula(SBVA::Config _common) : common(_common) { }
 
     void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
@@ -910,7 +910,7 @@ private:
     size_t curr_clause = 0;
     int adj_deleted = 0;
     vector<Clause> *clauses;
-    SBVA::Common common;
+    SBVA::Config common;
     ClauseCache* cache = nullptr;
 
     // maps each literal to a vector of clauses that contain it
@@ -953,7 +953,7 @@ vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
 }
 
 
-void CNF::init_cnf(uint32_t num_vars, Common common) {
+void CNF::init_cnf(uint32_t num_vars, Config common) {
     assert(data == nullptr);
     Formula* f = new Formula(common);
     f->init_cnf(num_vars);
@@ -970,7 +970,7 @@ void CNF::finish_cnf() {
     f->finish_cnf();
 }
 
-void CNF::parse_cnf(FILE* file, Common common) {
+void CNF::parse_cnf(FILE* file, Config common) {
     assert(data == nullptr);
     Formula* f = new Formula(common);
     f->read_cnf(file);

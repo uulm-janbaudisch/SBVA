@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 namespace SBVA {
 
-struct Common {
+struct Config {
     bool enable_trace = 0;
     bool generate_proof = 0;
     time_t end_time = 0;
@@ -52,10 +52,10 @@ struct CNF {
     void to_proof(FILE*);
 
     // Read in CNF from file
-    void parse_cnf(FILE* file, Common common);
+    void parse_cnf(FILE* file, Config config);
 
     // This is how to add a CNF clause by clause
-    void init_cnf(uint32_t num_vars, Common common);
+    void init_cnf(uint32_t num_vars, Config config);
     void add_cl(const std::vector<int>& cl_lits);
     void finish_cnf();
 

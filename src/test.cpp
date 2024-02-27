@@ -34,8 +34,8 @@ using std::endl;
 
 int main() {
     SBVA::CNF cnf;
-    SBVA::Common common;
-    cnf.init_cnf(8, common);
+    SBVA::Config config;
+    cnf.init_cnf(8, config);
 
     cnf.add_cl({1, 5});
     cnf.add_cl({2, 5});

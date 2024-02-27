@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 using namespace SBVA;
 
-void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Common common) {
+void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Config common) {
     CNF f;
     f.parse_cnf(fin, common);
     f.run(tiebreak);
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     FILE *fout = stdout;
     FILE *fproof = nullptr;
     Tiebreak tiebreak = Tiebreak::ThreeHop;
-    Common common;
+    Config common;
 
     int opt;
     while ((opt = getopt(argc, argv, "p:i:o:t:s:vnc")) != -1) {
