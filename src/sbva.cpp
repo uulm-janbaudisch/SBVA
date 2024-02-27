@@ -753,7 +753,11 @@ public:
             int new_var = num_vars;
 
             // Prepare to add new clauses.
-            clauses->resize(num_clauses + matched_lit_count + matched_clause_count + (common.preserve_model_cnt ? 1 : 0));
+            uint32_t new_sz = num_clauses + matched_lit_count + matched_clause_count +
+                (common.preserve_model_cnt ? 1 : 0);
+            if (clauses->size() >= new_sz) clauses->resize(new_sz);
+            else clauses->insert(clauses->end(), new_sz - clauses->size(), Clause());
+
             lit_to_clauses->resize(num_vars * 2);
             lit_count_adjust->resize(num_vars * 2);
             if (sparsevec_lit_idx(new_var) >= adjacency_matrix_width) {
