@@ -72,6 +72,9 @@ message(STATUS "Doing a ${CMAKE_BUILD_TYPE} build")
 # contains some library search cmake scripts
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+include (GenerateExportHeader)
+include (GNUInstallDirs)
+
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
 option(STATICCOMPILE "Compile to static executable" OFF)
 if (STATICCOMPILE)
