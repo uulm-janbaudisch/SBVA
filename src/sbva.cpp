@@ -130,12 +130,6 @@ int reduction(int lits, int clauses) {
 
 class Formula {
 public:
-    static Formula *parse(FILE *fin, SBVA::Common common) {
-        Formula *f = new Formula(common);
-        f->read_cnf(fin);
-        return f;
-    }
-
     ~Formula() {
         delete cache;
     }
@@ -155,7 +149,7 @@ public:
         cache = new ClauseCache;
     }
 
-    void add_cl(vector<int> cl_lits) {
+    void add_cl(const vector<int>& cl_lits) {
         assert(found_header);
         clauses->push_back(Clause());
         for(const auto& lit: cl_lits) {
@@ -929,11 +923,29 @@ vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
     return f->get_cnf(ret_num_vars, ret_num_cls);
 }
 
-CNF parse_cnf(FILE* file, Common common) {
-    auto f = Formula::parse(file, common);
+
+void CNF::init_cnf(uint32_t num_vars, Common common) {
+    assert(data == nullptr);
+    Formula* f = new Formula(common);
+    f->init_cnf(num_vars);
+}
+
+void CNF::add_cl(const std::vector<int>& cl_lits) {
+    Formula* f = (Formula*)data;
+    f->add_cl(cl_lits);
+}
+
+void CNF::finish_cnf() {
+    Formula* f = (Formula*)data;
+    f->finish_cnf();
+}
+
+void CNF::parse_cnf(FILE* file, Common common) {
+    assert(data == nullptr);
+    Formula* f = new Formula(common);
+    f->read_cnf(file);
     CNF cnf;
-    cnf.data = (void*) f;
-    return cnf;
+    data = (void*) f;
 }
 
 }

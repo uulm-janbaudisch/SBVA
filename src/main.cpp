@@ -28,12 +28,11 @@ THE SOFTWARE.
 using namespace SBVA;
 
 void run_bva(FILE *fin, FILE *fout, FILE *fproof, Tiebreak tiebreak, Common common) {
-    CNF f = parse_cnf(fin, common);
+    CNF f;
+    f.parse_cnf(fin, common);
     f.run(tiebreak);
     f.to_cnf(fout);
-    if (fproof != NULL) {
-        f.to_proof(fproof);
-    }
+    if (fproof != nullptr) f.to_proof(fproof);
 }
 
 int main(int argc, char **argv) {

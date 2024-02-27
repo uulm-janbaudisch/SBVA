@@ -45,18 +45,22 @@ enum Tiebreak {
 struct CNF {
     ~CNF();
     void run(Tiebreak t);
+
     void to_cnf(FILE*);
+    std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls);
+
     void to_proof(FILE*);
 
+    // Read in CNF from file
+    void parse_cnf(FILE* file, Common common);
+
     // This is how to add a CNF clause by clause
-    void init_cnf(uint32_t num_vars);
-    void add_cl(std::vector<int> cl_lits);
+    void init_cnf(uint32_t num_vars, Common common);
+    void add_cl(const std::vector<int>& cl_lits);
     void finish_cnf();
-    std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls);
 
     void* data = nullptr;
 };
 
-CNF parse_cnf(FILE* file, Common common);
 
 }
