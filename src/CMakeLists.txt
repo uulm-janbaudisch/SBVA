@@ -45,7 +45,6 @@ SET(SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/GitSHA1.cpp)
 
 ADD_LIBRARY(sbva ${SOURCES} ${LIB})
-target_link_libraries (sbva)
 
 set_target_properties(sbva PROPERTIES
     PUBLIC_HEADER "${sbva_public_headers}"
