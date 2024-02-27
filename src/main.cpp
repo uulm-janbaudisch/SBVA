@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     FILE *fout = stdout;
     FILE *fproof = nullptr;
     Tiebreak tiebreak = Tiebreak::ThreeHop;
-    Config common;
+    Config config;
 
     int opt;
     while ((opt = getopt(argc, argv, "p:i:o:t:s:vnc")) != -1) {
