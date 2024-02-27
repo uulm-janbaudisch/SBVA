@@ -35,6 +35,7 @@ struct Common {
     time_t end_time = 0;
     unsigned int max_replacements = 0;
     uint32_t verb = 0;
+    bool preserve_model_cnt = 0;
 };
 
 enum Tiebreak {

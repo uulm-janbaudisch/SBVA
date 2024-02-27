@@ -751,6 +751,7 @@ public:
 
             // Prepare to add new clauses.
             clauses->resize(num_clauses + matched_lit_count + matched_clause_count);
+            clauses->resize(num_clauses + matched_lit_count + matched_clause_count + (common.preserve_model_cnt ? 1 : 0));
             lit_to_clauses->resize(num_vars * 2);
             lit_count_adjust->resize(num_vars * 2);
             if (sparsevec_lit_idx(new_var) >= adjacency_matrix_width) {
@@ -807,6 +808,32 @@ public:
                 }
             }
 
+            // Preserving model count:
+            //
+            // The only case where we add a model is if both assignments for the auxiiliary variable satisfy the formula
+            // for the same assignment of the original variables. This only happens if all(matched_lits) *AND*
+            // all(matches_clauses) are satisfied.
+            //
+            // The easiest way to fix this is to add one clause that constrains all(matched_lits) => -f
+            if (common.preserve_model_cnt) {
+                int new_clause = num_clauses + matched_lit_count + matched_clause_count;
+                auto cls = Clause();
+                cls.lits.push_back(-new_var);
+                for (int i = 0; i < matched_lit_count; ++i) {
+                    int lit = (*matched_lits)[i];
+                    cls.lits.push_back(-lit);
+                    (*lit_to_clauses)[lit_index(-lit)].push_back(new_clause);
+                }
+
+                (*clauses)[new_clause] = cls;
+                (*lit_to_clauses)[(lit_index(-new_var))].push_back(new_clause);
+
+                if (common.generate_proof) {
+                    proof->push_back(ProofClause(true, cls.lits));
+                }
+            }
+
+
             set<int> valid_clause_ids;
             for (int i = 0; i < matched_clause_count; ++i) {
                 valid_clause_ids.insert((*matched_clauses_id)[i]);
@@ -838,7 +865,7 @@ public:
             }
 
             adj_deleted += removed_clause_count;
-            num_clauses += matched_lit_count + matched_clause_count;
+            num_clauses += matched_lit_count + matched_clause_count + (common.preserve_model_cnt ? 1 : 0);
 
             // Update priorities.
             for (auto lit : lits_to_update) {

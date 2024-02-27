@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     Common common;
 
     int opt;
-    while ((opt = getopt(argc, argv, "p:i:o:t:s:vn")) != -1) {
+    while ((opt = getopt(argc, argv, "p:i:o:t:s:vnc")) != -1) {
         switch (opt) {
             case 'i':
                 fin = fopen(optarg, "r");
@@ -79,6 +79,9 @@ int main(int argc, char **argv) {
                 break;
             case 'n':
                 tiebreak = Tiebreak::None;
+                break;
+           case 'c':
+                common.preserve_model_cnt = true;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-i input] [-o output]\n", argv[0]);
