@@ -278,7 +278,7 @@ public:
 
         for (int cid : lit_to_clauses[lit_index(abslit)]) {
             config.steps--;
-            Clause *cls = &(clauses)[cid];
+            Clause *cls = &clauses[cid];
             if (cls->deleted) continue;
             for (int v : cls->lits) {
                 vec.coeffRef(sparsevec_lit_idx(v)) += 1;
@@ -287,7 +287,7 @@ public:
 
         for (int cid : lit_to_clauses[lit_index(-abslit)]) {
             config.steps--;
-            Clause *cls = &(clauses)[cid];
+            Clause *cls = &clauses[cid];
             if (cls->deleted) continue;
             for (int v : cls->lits) {
                 vec.coeffRef(sparsevec_lit_idx(v)) += 1;
@@ -306,17 +306,17 @@ public:
         update_adjacency_matrix(lit1);
         update_adjacency_matrix(lit2);
 
-        Eigen::SparseVector<int> *vec1 = &adjacency_matrix[sparsevec_lit_idx(abs1)];
-        Eigen::SparseVector<int> *vec2 = &adjacency_matrix[sparsevec_lit_idx(abs2)];
+        auto& vec1 = adjacency_matrix[sparsevec_lit_idx(abs1)];
+        auto& vec2 = adjacency_matrix[sparsevec_lit_idx(abs2)];
 
         int total_count = 0;
-        for (int *varPtr = vec2->innerIndexPtr(); varPtr < vec2->innerIndexPtr() + vec2->nonZeros(); varPtr++) {
+        for (int *varPtr = vec2.innerIndexPtr(); varPtr < vec2.innerIndexPtr() + vec2.nonZeros(); varPtr++) {
             config.steps--;
             int var = sparcevec_lit_for_idx(*varPtr);
-            int count = vec2->coeffRef(sparsevec_lit_idx(var));
+            int count = vec2.coeffRef(sparsevec_lit_idx(var));
             update_adjacency_matrix(var);
-            auto vec3 = &adjacency_matrix[sparsevec_lit_idx(var)];
-            total_count += count * vec3->dot(*vec1);
+            auto& vec3 = adjacency_matrix[sparsevec_lit_idx(var)];
+            total_count += count * vec3.dot(vec1);
         }
         tmp_heuristic_cache_full[sparsevec_lit_idx(lit2)] = total_count;
         return total_count;
@@ -432,19 +432,12 @@ public:
         vector<int> matched_clauses_swap;
         vector<int> matched_clauses_id;
         vector<int> matched_clauses_id_swap;
-        matched_lits.reserve(10000);
-        matched_clauses.reserve(10000);
-        matched_clauses_swap.reserve(10000);
-        matched_clauses_id.reserve(10000);
-        matched_clauses_id_swap.reserve(10000);
 
         // Track the index of the matched clauses from every literal that is added to matched_lits.
         vector< tuple<int, int> > clauses_to_remove;
-        clauses_to_remove.reserve(10000);
 
         // Used for computing clause differences
         vector<int> diff;
-        diff.reserve(10000);
 
         // Keep track of the matrix of swaps that we can perform.
         // Each entry is of the form (literal, <clause index>, <index in matched_clauses>)
@@ -516,10 +509,10 @@ public:
                 return;
             }
 
-            matched_lits.resize(0);
-            matched_clauses.resize(0);
-            matched_clauses_id.resize(0);
-            clauses_to_remove.resize(0);
+            matched_lits.clear();
+            matched_clauses.clear();
+            matched_clauses_id.clear();
+            clauses_to_remove.clear();
             tmp_heuristic_cache_full.clear();
 
             // Get the next literal to evaluate.
