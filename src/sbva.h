@@ -39,6 +39,8 @@ struct Config {
     int64_t steps = std::numeric_limits<int64_t>::max();
     unsigned int max_replacements = 0;
     bool preserve_model_cnt = 0;
+    uint32_t matched_lits_cutoff = 2; // the larger, the more strict
+    uint32_t matched_cls_cutoff = 2;  // the larger, the more strict
 };
 
 enum Tiebreak {

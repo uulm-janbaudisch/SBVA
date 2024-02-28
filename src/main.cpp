@@ -83,6 +83,12 @@ int main(int argc, char **argv) {
         .action([&](const auto&) {tiebreak = Tiebreak::None;})
         .flag()
         .help("Use original BVA tie-break. Runs BVA instead of SBVA");
+    program.add_argument("--clscutoff")
+        .action([&](const auto& a) {config.matched_cls_cutoff = std::atoi(a.c_str());})
+        .help("Matched clauses cutoff. The larger, the larger the gain must be to perform BVA");
+    program.add_argument("--litscutoff")
+        .action([&](const auto& a) {config.matched_lits_cutoff = std::atoi(a.c_str());})
+        .help("Matched literals cutoff. The larger, the larger the gain must be to perform BVA");
     program.add_argument("-c", "--countpreserve")
         .action([&](const auto&) {config.preserve_model_cnt = true;})
         .flag()

@@ -730,7 +730,8 @@ public:
                 continue;
             }
 
-            if (matched_lits.size() <= 2 && matched_clauses.size() <= 2) {
+            if (matched_lits.size() <= config.matched_lits_cutoff &&
+                    matched_clauses.size() <= config.matched_cls_cutoff) {
                 continue;
             }
 
