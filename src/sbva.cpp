@@ -103,7 +103,6 @@ struct ClauseHash {
     }
 };
 
-
 struct ClauseCache {
     unordered_set<Clause, ClauseHash> clauses;
 
@@ -125,10 +124,10 @@ uint32_t lit_index(int32_t lit) {
 uint32_t sparsevec_lit_idx(int32_t lit) {
     return (lit > 0 ? lit - 1: -lit - 1);
 }
+
 uint32_t sparcevec_lit_for_idx(int32_t lit) {
     return (lit + 1);
 }
-
 
 int reduction(int lits, int clauses) {
     return (lits * clauses) - (lits + clauses);
@@ -165,20 +164,20 @@ public:
                 exit(1);
             }
             config.steps--;
-            clauses.operator[](curr_clause).lits.push_back(lit);
+            clauses[(curr_clause)].lits.push_back(lit);
         }
 
-        sort(clauses.operator[](curr_clause).lits.begin(), clauses.operator[](curr_clause).lits.end());
+        sort(clauses[(curr_clause)].lits.begin(), clauses[(curr_clause)].lits.end());
 
-        auto *cls = &clauses.operator[](curr_clause);
+        auto *cls = &clauses[(curr_clause)];
         if (cache->contains(cls)) {
             cls->deleted = true;
             adj_deleted++;
         } else {
             cache->add(cls);
-            for (auto l : clauses.operator[](curr_clause).lits) {
+            for (auto l : clauses[(curr_clause)].lits) {
                 config.steps--;
-                lit_to_clauses.operator[](lit_index(l)).push_back(curr_clause);
+                lit_to_clauses[lit_index(l)].push_back(curr_clause);
             }
         }
 
@@ -239,22 +238,22 @@ public:
                         exit(1);
                     }
                     config.steps--;
-                    clauses.operator[](curr_clause).lits.push_back(lit);
+                    clauses[(curr_clause)].lits.push_back(lit);
                     curr = strchr(curr, ' ');
                     curr++;
                 }
 
-                sort(clauses.operator[](curr_clause).lits.begin(), clauses.operator[](curr_clause).lits.end());
+                sort(clauses[(curr_clause)].lits.begin(), clauses[(curr_clause)].lits.end());
 
-                auto *cls = &clauses.operator[](curr_clause);
+                auto *cls = &clauses[(curr_clause)];
                 if (cache->contains(cls)) {
                     cls->deleted = true;
                     adj_deleted++;
                 } else {
                     cache->add(cls);
-                    for (auto l : clauses.operator[](curr_clause).lits) {
+                    for (auto l : clauses[(curr_clause)].lits) {
                         config.steps--;
-                        lit_to_clauses.operator[](lit_index(l)).push_back(curr_clause);
+                        lit_to_clauses[lit_index(l)].push_back(curr_clause);
                     }
                 }
 
@@ -326,10 +325,10 @@ public:
     auto to_cnf(FILE *fout) {
         fprintf(fout, "p cnf %lu %lu\n", num_vars, num_clauses - adj_deleted);
         for (size_t i = 0; i < num_clauses; i++) {
-            if (clauses.operator[](i).deleted) {
+            if (clauses[(i)].deleted) {
                 continue;
             }
-            for (int lit : clauses.operator[](i).lits) {
+            for (int lit : clauses[(i)].lits) {
                 fprintf(fout, "%d ", lit);
             }
             fprintf(fout, "0\n");
@@ -342,8 +341,8 @@ public:
         ret_num_cls = num_clauses -adj_deleted;
         ret_num_vars = num_vars;
         for (size_t i = 0; i < num_clauses; i++) {
-            if (clauses.operator[](i).deleted) continue;
-            for (int lit : clauses.operator[](i).lits) {
+            if (clauses[(i)].deleted) continue;
+            for (int lit : clauses[(i)].lits) {
                 ret.push_back(lit);
             }
             ret.push_back(0);
@@ -352,8 +351,8 @@ public:
     }
 
     void to_proof(FILE *fproof) {
-        for (size_t i = 0; i < proof->size(); i++) {
-            auto *clause = &proof->operator[](i);
+        for (size_t i = 0; i < proof.size(); i++) {
+            auto *clause = &proof[(i)];
             if (!clause->is_addition) {
                 fprintf(fproof, "d ");
             }
@@ -371,7 +370,7 @@ public:
             if (lit == var) {
                 continue;
             }
-            int count = lit_to_clauses.operator[](lit_index(lit)).size() + lit_count_adjust.operator[](lit_index(lit));
+            int count = lit_to_clauses[lit_index(lit)].size() + lit_count_adjust[lit_index(lit)];
             if (lmin == 0 || count < lmin_count) {
                 lmin = lit;
                 lmin_count = count;
@@ -381,32 +380,32 @@ public:
     }
 
     int real_lit_count(int lit) {
-        return lit_to_clauses.operator[](lit_index(lit)).size() + lit_count_adjust.operator[](lit_index(lit));
+        return lit_to_clauses[lit_index(lit)].size() + lit_count_adjust[lit_index(lit)];
     }
 
     // Performs partial clause difference between clause and other, storing the result in diff.
     // Only the first max_diff literals are stored in diff.
     // Requires that clause and other are sorted.
-    void clause_sub(Clause *clause, Clause *other, vector<int> *diff, uint32_t max_diff) {
-        diff->resize(0);
+    void clause_sub(Clause *clause, Clause *other, vector<int>& diff, uint32_t max_diff) {
+        diff.resize(0);
         size_t idx_a = 0;
         size_t idx_b = 0;
 
-        while (idx_a < clause->lits.size() && idx_b < other->lits.size() && diff->size() <= max_diff) {
+        while (idx_a < clause->lits.size() && idx_b < other->lits.size() && diff.size() <= max_diff) {
             config.steps--;
             if (clause->lits[idx_a] == other->lits[idx_b]) {
                 idx_a++;
                 idx_b++;
             } else if (clause->lits[idx_a] < other->lits[idx_b]) {
-                diff->push_back(clause->lits[idx_a]);
+                diff.push_back(clause->lits[idx_a]);
                 idx_a++;
             } else {
                 idx_b++;
             }
         }
 
-        while (idx_a < clause->lits.size() && diff->size() <= max_diff) {
-            diff->push_back(clause->lits[idx_a]);
+        while (idx_a < clause->lits.size() && diff.size() <= max_diff) {
+            diff.push_back(clause->lits[idx_a]);
             idx_a++;
         }
     }
@@ -444,8 +443,8 @@ public:
         clauses_to_remove.reserve(10000);
 
         // Used for computing clause differences
-        vector<int> *diff = new vector<int>();
-        diff->reserve(10000);
+        vector<int> diff;
+        diff.reserve(10000);
 
         // Keep track of the matrix of swaps that we can perform.
         // Each entry is of the form (literal, <clause index>, <index in matched_clauses>)
@@ -486,16 +485,12 @@ public:
         matched_entries->reserve(10000);
 
         // Keep a list of the literals that are matched so we can sort and count later.
-        vector<int> *matched_entries_lits = new vector<int>();
-        matched_entries_lits->reserve(10000);
+        vector<int> matched_entries_lits;
+        matched_entries_lits.reserve(10000);
 
         // Used for priority queue updates.
         unordered_set<int> lits_to_update;
         lits_to_update.reserve(10000);
-
-        if (config.generate_proof) {
-            proof = new vector<ProofClause>();
-        }
 
         // Track number of replacements (new auxiliary variables).
         size_t num_replacements = 0;
@@ -546,10 +541,10 @@ public:
             matched_lits.push_back(var);
 
             // Mcls := F[l]
-            for (size_t i = 0; i < lit_to_clauses.operator[](lit_index(var)).size(); i++) {
+            for (size_t i = 0; i < lit_to_clauses[lit_index(var)].size(); i++) {
                 config.steps--;
-                int clause_idx = lit_to_clauses.operator[](lit_index(var))[i];
-                if (!clauses.operator[](clause_idx).deleted) {
+                int clause_idx = lit_to_clauses[lit_index(var)][i];
+                if (!clauses[(clause_idx)].deleted) {
                     matched_clauses.push_back(clause_idx);
                     matched_clauses_id.push_back(i);
                     clauses_to_remove.push_back(make_tuple(clause_idx, i));
@@ -559,12 +554,12 @@ public:
             while (1) {
                 // P = {}
                 matched_entries->resize(0);
-                matched_entries_lits->resize(0);
+                matched_entries_lits.resize(0);
 
                 if (config.verbosity) {
                     cout << "Iteration, Mlit: ";
                     for (size_t i = 0; i < matched_lits.size(); i++) {
-                        cout << matched_lits.operator[](i) << " ";
+                        cout << matched_lits[(i)] << " ";
                     }
                     cout << endl;
                 }
@@ -572,9 +567,9 @@ public:
                 // foreach C in Mcls
                 for (size_t i = 0; i < matched_clauses.size(); i++) {
                     config.steps--;
-                    int clause_idx = matched_clauses.operator[](i);
-                    int clause_id = matched_clauses_id.operator[](i);
-                    auto *clause = &clauses.operator[](clause_idx);
+                    int clause_idx = matched_clauses[(i)];
+                    int clause_id = matched_clauses_id[(i)];
+                    auto *clause = &clauses[(clause_idx)];
 
                     if (config.verbosity >= 3) {
                         cout << "  Clause " << clause_idx << " (" << clause_id << "): ";
@@ -588,9 +583,9 @@ public:
                     }
 
                     // foreach D in F[lmin]
-                    for (auto other_idx : lit_to_clauses.operator[](lit_index(lmin))) {
+                    for (auto other_idx : lit_to_clauses[lit_index(lmin)]) {
                         config.steps--;
-                        auto *other = &clauses.operator[](other_idx);
+                        auto *other = &clauses[(other_idx)];
                         if (other->deleted) {
                             continue;
                         }
@@ -603,12 +598,12 @@ public:
                         clause_sub(clause, other, diff, 2);
 
                         // if diff = {l} then
-                        if (diff->size() == 1 && diff->operator[](0) == var) {
+                        if (diff.size() == 1 && diff[0] == var) {
                             // diff := D \ C (limited to 2)
                             clause_sub(other, clause, diff, 2);
 
                             // if diff = {lmin} then
-                            auto lit = diff->operator[](0);
+                            auto lit = diff[0];
 
                             // TODO: potential performance improvement
                             bool found = false;
@@ -623,7 +618,7 @@ public:
                             if (!found) {
                                 // Add to clause match matrix.
                                 matched_entries->push_back(make_tuple(lit, other_idx, i));
-                                matched_entries_lits->push_back(lit);
+                                matched_entries_lits.push_back(lit);
                             }
                         }
                     }
@@ -631,22 +626,22 @@ public:
 
                 // lmax := most frequent literal in P
 
-                config.steps-= matched_entries_lits->size();
-                sort(matched_entries_lits->begin(), matched_entries_lits->end());
+                config.steps-= matched_entries_lits.size();
+                sort(matched_entries_lits.begin(), matched_entries_lits.end());
 
                 int lmax = 0;
                 int lmax_count = 0;
 
                 std::vector<int> ties;
                 ties.reserve(16);
-                for (size_t i = 0; i < matched_entries_lits->size();) {
-                    int lit = matched_entries_lits->operator[](i);
+                for (size_t i2 = 0; i2 < matched_entries_lits.size();) {
+                    int lit = matched_entries_lits[i2];
                     int count = 0;
 
-                    while (i < matched_entries_lits->size() && matched_entries_lits->operator[](i) == lit) {
+                    while (i2 < matched_entries_lits.size() && matched_entries_lits[i2] == lit) {
                         config.steps--;
                         count++;
-                        i++;
+                        i2++;
                     }
 
                     if (config.verbosity >= 3) {
@@ -717,25 +712,25 @@ public:
                     int clause_idx = get<1>(pair);
                     int idx = get<2>(pair);
 
-                    matched_clauses_swap.operator[](insert_idx) = matched_clauses.operator[](idx);
-                    matched_clauses_id_swap.operator[](insert_idx) = matched_clauses_id.operator[](idx);
+                    matched_clauses_swap[(insert_idx)] = matched_clauses[(idx)];
+                    matched_clauses_id_swap[(insert_idx)] = matched_clauses_id[(idx)];
                     insert_idx += 1;
 
-                    clauses_to_remove.push_back(make_tuple(clause_idx, matched_clauses_id.operator[](idx)));
+                    clauses_to_remove.push_back(make_tuple(clause_idx, matched_clauses_id[(idx)]));
                 }
 
-                swap(matched_clauses, matched_clauses_swap);
-                swap(matched_clauses_id, matched_clauses_id_swap);
+                matched_clauses.swap(matched_clauses_swap);
+                matched_clauses_id.swap(matched_clauses_id_swap);
 
                 if (config.verbosity) {
                     cout << "  Mcls: ";
                     for (size_t i = 0; i < matched_clauses.size(); i++) {
-                        cout << matched_clauses.operator[](i) << " ";
+                        cout << matched_clauses[(i)] << " ";
                     }
                     cout << endl;
                     cout << "  Mcls_id: ";
                     for (size_t i = 0; i < matched_clauses_id.size(); i++) {
-                        cout << matched_clauses_id.operator[](i) << " ";
+                        cout << matched_clauses_id[(i)] << " ";
                     }
                     cout << endl;
                 }
@@ -755,12 +750,12 @@ public:
             if (config.verbosity) {
                 cout << "  mlits: ";
                 for (size_t i = 0; i < matched_lits.size(); i++) {
-                    cout << matched_lits.operator[](i) << " ";
+                    cout << matched_lits[(i)] << " ";
                 }
                 cout << endl;
                 cout << "  mclauses:\n";
                 for (size_t i = 0; i < matched_clauses.size(); i++) {
-                    clauses.operator[](matched_clauses.operator[](i)).print("   -> ");
+                    clauses[matched_clauses[i]].print("   -> ");
                 }
                 cout << endl;
 
@@ -794,7 +789,7 @@ public:
             // Add (f, lit) clauses.
             for (int i = 0; i < matched_lit_count; ++i) {
                 config.steps--;
-                int lit = matched_lits.operator[](i);
+                int lit = matched_lits[(i)];
                 int new_clause = num_clauses + i;
 
                 auto cls = Clause();
@@ -802,14 +797,14 @@ public:
                 cls.lits.push_back(new_var); // new_var is always largest value
                 (clauses)[new_clause] = cls;
 
-                lit_to_clauses.operator[](lit_index(lit)).push_back(new_clause);
-                lit_to_clauses.operator[](lit_index(new_var)).push_back(new_clause);
+                lit_to_clauses[lit_index(lit)].push_back(new_clause);
+                lit_to_clauses[lit_index(new_var)].push_back(new_clause);
 
                 if (config.generate_proof) {
                     auto proof_lits = vector<int>();
                     proof_lits.push_back(new_var); // new_var needs to be first for proof
                     proof_lits.push_back(lit);
-                    proof->push_back(ProofClause(true, proof_lits));
+                    proof.push_back(ProofClause(true, proof_lits));
                 }
             }
 
@@ -821,19 +816,19 @@ public:
 
                 auto cls = Clause();
                 cls.lits.push_back(-new_var); // -new_var is always smallest value
-                lit_to_clauses.operator[](lit_index(-new_var)).push_back(new_clause);
+                lit_to_clauses[lit_index(-new_var)].push_back(new_clause);
 
-                auto match_cls = clauses.operator[](clause_idx);
+                auto match_cls = clauses[(clause_idx)];
                 for (auto mlit : match_cls.lits) {
                     if (mlit != var) {
                         cls.lits.push_back(mlit);
-                        lit_to_clauses.operator[](lit_index(mlit)).push_back(new_clause);
+                        lit_to_clauses[lit_index(mlit)].push_back(new_clause);
                     }
                 }
                 clauses[new_clause] = cls;
 
                 if (config.generate_proof) {
-                    proof->push_back(ProofClause(true, cls.lits));
+                    proof.push_back(ProofClause(true, cls.lits));
                 }
             }
 
@@ -858,7 +853,7 @@ public:
                 lit_to_clauses[(lit_index(-new_var))].push_back(new_clause);
 
                 if (config.generate_proof) {
-                    proof->push_back(ProofClause(true, cls.lits));
+                    proof.push_back(ProofClause(true, cls.lits));
                 }
             }
 
@@ -886,12 +881,12 @@ public:
                 removed_clause_count += 1;
                 for (auto lit : cls->lits) {
                     config.steps--;
-                    lit_count_adjust.operator[](lit_index(lit)) -= 1;
+                    lit_count_adjust[lit_index(lit)] -= 1;
                     lits_to_update.insert(lit);
                 }
 
                 if (config.generate_proof) {
-                    proof->push_back(ProofClause(false, cls->lits));
+                    proof.push_back(ProofClause(false, cls->lits));
                 }
             }
 
@@ -951,7 +946,7 @@ private:
     map< int, int > tmp_heuristic_cache_full;
 
     // proof storage
-    vector<ProofClause> *proof;
+    vector<ProofClause> proof;
 };
 
 }
