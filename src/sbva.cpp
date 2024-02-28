@@ -37,6 +37,7 @@ THE SOFTWARE.
 #include <cstdio>
 #include <utility>
 #include <functional>
+#include <memory>
 
 #include <Eigen/SparseCore>
 #include "murmur.h"
@@ -428,10 +429,15 @@ public:
         }
 
         vector<int> matched_lits;
-        vector<int> matched_clauses;
-        vector<int> matched_clauses_swap;
-        vector<int> matched_clauses_id;
-        vector<int> matched_clauses_id_swap;
+        vector<int>* matched_clauses(new vector<int>());
+        vector<int> *matched_clauses_swap(new vector<int>());
+        vector<int> *matched_clauses_id( new vector<int>());
+        vector<int> *matched_clauses_id_swap(new vector<int>());
+        matched_lits.reserve(10000);
+        matched_clauses->reserve(10000);
+        matched_clauses_swap->reserve(10000);
+        matched_clauses_id->reserve(10000);
+        matched_clauses_id_swap->reserve(10000);
 
         // Track the index of the matched clauses from every literal that is added to matched_lits.
         vector< tuple<int, int> > clauses_to_remove;
@@ -492,6 +498,10 @@ public:
                 if (config.verbosity)
                     cout << "c stopping SBVA due to timeout. time remainK: "
                         << std::setprecision(2) << std::fixed << config.steps/1000.0 << endl;
+                delete matched_clauses;
+                delete matched_clauses_swap;
+                delete matched_clauses_id;
+                delete matched_clauses_id_swap;
                 return;
             }
             if (config.verbosity >= 2)
@@ -503,12 +513,16 @@ public:
                 if (config.verbosity) {
                     cout << "Hit replacement limit (" << config.max_replacements << ")" << endl;
                 }
+                delete matched_clauses;
+                delete matched_clauses_swap;
+                delete matched_clauses_id;
+                delete matched_clauses_id_swap;
                 return;
             }
 
             matched_lits.clear();
-            matched_clauses.clear();
-            matched_clauses_id.clear();
+            matched_clauses->clear();
+            matched_clauses_id->clear();
             clauses_to_remove.clear();
             tmp_heuristic_cache_full.clear();
 
@@ -535,8 +549,8 @@ public:
                 config.steps--;
                 int clause_idx = lit_to_clauses[lit_index(var)][i];
                 if (!clauses[(clause_idx)].deleted) {
-                    matched_clauses.push_back(clause_idx);
-                    matched_clauses_id.push_back(i);
+                    matched_clauses->push_back(clause_idx);
+                    matched_clauses_id->push_back(i);
                     clauses_to_remove.push_back(make_tuple(clause_idx, i));
                 }
             }
@@ -555,10 +569,10 @@ public:
                 }
 
                 // foreach C in Mcls
-                for (size_t i = 0; i < matched_clauses.size(); i++) {
+                for (size_t i = 0; i < matched_clauses->size(); i++) {
                     config.steps--;
-                    int clause_idx = matched_clauses[(i)];
-                    int clause_id = matched_clauses_id[(i)];
+                    int clause_idx = (*matched_clauses)[(i)];
+                    int clause_id = (*matched_clauses_id)[(i)];
                     auto *clause = &clauses[(clause_idx)];
 
                     if (config.verbosity >= 3) {
@@ -652,7 +666,7 @@ public:
                     break;
                 }
 
-                int prev_clause_count = matched_clauses.size();
+                int prev_clause_count = matched_clauses->size();
                 int new_clause_count = lmax_count;
 
                 int prev_lit_count = matched_lits.size();
@@ -690,8 +704,8 @@ public:
                 matched_lits.push_back(lmax);
 
                 // Mcls := Mcls U P[lmax]
-                matched_clauses_swap.resize(lmax_count);
-                matched_clauses_id_swap.resize(lmax_count);
+                matched_clauses_swap->resize(lmax_count);
+                matched_clauses_id_swap->resize(lmax_count);
 
                 int insert_idx = 0;
                 for (const auto& pair : matched_entries) {
@@ -702,24 +716,24 @@ public:
                     int clause_idx = get<1>(pair);
                     int idx = get<2>(pair);
 
-                    matched_clauses_swap[(insert_idx)] = matched_clauses[(idx)];
-                    matched_clauses_id_swap[(insert_idx)] = matched_clauses_id[(idx)];
+                    (*matched_clauses_swap)[(insert_idx)] = (*matched_clauses)[(idx)];
+                    (*matched_clauses_id_swap)[(insert_idx)] = (*matched_clauses_id)[(idx)];
                     insert_idx += 1;
 
-                    clauses_to_remove.push_back(make_tuple(clause_idx, matched_clauses_id[(idx)]));
+                    clauses_to_remove.push_back(make_tuple(clause_idx, (*matched_clauses_id)[(idx)]));
                 }
 
-                matched_clauses.swap(matched_clauses_swap);
-                matched_clauses_id.swap(matched_clauses_id_swap);
+                swap(matched_clauses,matched_clauses_swap);
+                swap(matched_clauses_id,matched_clauses_id_swap);
 
                 if (config.verbosity) {
                     cout << "  Mcls: ";
-                    for (int matched_clause : matched_clauses) {
+                    for (int matched_clause : (*matched_clauses)) {
                         cout << matched_clause << " ";
                     }
                     cout << endl;
                     cout << "  Mcls_id: ";
-                    for (int i : matched_clauses_id) {
+                    for (int i : (*matched_clauses_id)) {
                         cout << i << " ";
                     }
                     cout << endl;
@@ -731,11 +745,11 @@ public:
             }
 
             if (matched_lits.size() <= config.matched_lits_cutoff &&
-                    matched_clauses.size() <= config.matched_cls_cutoff) {
+                    matched_clauses->size() <= config.matched_cls_cutoff) {
                 continue;
             }
 
-            int matched_clause_count = matched_clauses.size();
+            int matched_clause_count = matched_clauses->size();
             int matched_lit_count = matched_lits.size();
 
             if (config.verbosity) {
@@ -745,7 +759,7 @@ public:
                 }
                 cout << endl;
                 cout << "  mclauses:\n";
-                for (int matched_clause : matched_clauses) {
+                for (int matched_clause : (*matched_clauses)) {
                     clauses[matched_clause].print("   -> ");
                 }
                 cout << endl;
@@ -802,7 +816,7 @@ public:
             // Add (-f, ...) clauses.
             for (int i = 0; i < matched_clause_count; ++i) {
                 config.steps--;
-                int clause_idx = matched_clauses[i];
+                int clause_idx = (*matched_clauses)[i];
                 auto new_clause = num_clauses + matched_lit_count + i;
 
                 auto cls = Clause();
@@ -852,7 +866,7 @@ public:
             set<int> valid_clause_ids;
             for (int i = 0; i < matched_clause_count; ++i) {
                 config.steps--;
-                valid_clause_ids.insert(matched_clauses_id[i]);
+                valid_clause_ids.insert((*matched_clauses_id)[i]);
             }
 
             // Remove the old clauses.
@@ -916,6 +930,10 @@ public:
 
             num_replacements += 1;
         }
+        delete matched_clauses;
+        delete matched_clauses_swap;
+        delete matched_clauses_id;
+        delete matched_clauses_id_swap;
     }
 
 private:
