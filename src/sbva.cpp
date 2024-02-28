@@ -260,6 +260,7 @@ public:
                 curr_clause++;
             }
         }
+        free(line);
         delete cache;
         cache = nullptr;
 
@@ -474,16 +475,13 @@ public:
         //              (B v E)  (B v F)  (B v H)
         //              (C v E)  (C v F)  (C v H)
         //
-        vector< tuple<int, int, int> > *matched_entries = new vector< tuple<int, int, int> >();
-        matched_entries->reserve(10000);
+        vector< tuple<int, int, int> > matched_entries;
 
         // Keep a list of the literals that are matched so we can sort and count later.
         vector<int> matched_entries_lits;
-        matched_entries_lits.reserve(10000);
 
         // Used for priority queue updates.
         unordered_set<int> lits_to_update;
-        lits_to_update.reserve(10000);
 
         // Track number of replacements (new auxiliary variables).
         size_t num_replacements = 0;
@@ -546,8 +544,8 @@ public:
 
             while (1) {
                 // P = {}
-                matched_entries->resize(0);
-                matched_entries_lits.resize(0);
+                matched_entries.clear();
+                matched_entries_lits.clear();
 
                 if (config.verbosity) {
                     cout << "Iteration, Mlit: ";
@@ -610,7 +608,7 @@ public:
                             // if lit not in Mlit then
                             if (!found) {
                                 // Add to clause match matrix.
-                                matched_entries->push_back(make_tuple(lit, other_idx, i));
+                                matched_entries.push_back(make_tuple(lit, other_idx, i));
                                 matched_entries_lits.push_back(lit);
                             }
                         }
@@ -697,7 +695,7 @@ public:
                 matched_clauses_id_swap.resize(lmax_count);
 
                 int insert_idx = 0;
-                for (auto pair : *matched_entries) {
+                for (const auto& pair : matched_entries) {
                     config.steps--;
                     int lit = get<0>(pair);
                     if (lit != lmax) continue;
@@ -950,6 +948,7 @@ using namespace SBVAImpl;
 CNF::~CNF() {
     Formula* f = (Formula*)data;
     delete f;
+    f = nullptr;
 }
 
 void CNF::run(SBVA::Tiebreak t) {
