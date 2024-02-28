@@ -315,7 +315,7 @@ public:
             int var = sparcevec_lit_for_idx(*varPtr);
             int count = vec2->coeffRef(sparsevec_lit_idx(var));
             update_adjacency_matrix(var);
-            Eigen::SparseVector<int> *vec3 = &adjacency_matrix[sparsevec_lit_idx(var)];
+            auto vec3 = &adjacency_matrix[sparsevec_lit_idx(var)];
             total_count += count * vec3->dot(*vec1);
         }
         tmp_heuristic_cache_full[sparsevec_lit_idx(lit2)] = total_count;
