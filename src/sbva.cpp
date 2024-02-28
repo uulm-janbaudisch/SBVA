@@ -352,12 +352,11 @@ public:
     }
 
     void to_proof(FILE *fproof) {
-        for (size_t i = 0; i < proof.size(); i++) {
-            auto *clause = &proof[(i)];
-            if (!clause->is_addition) {
+        for (const auto & clause : proof) {
+            if (!clause.is_addition) {
                 fprintf(fproof, "d ");
             }
-            for (int lit : clause->lits) {
+            for (int lit : clause.lits) {
                 fprintf(fproof, "%d ", lit);
             }
             fprintf(fproof, "0\n");
@@ -549,8 +548,8 @@ public:
 
                 if (config.verbosity) {
                     cout << "Iteration, Mlit: ";
-                    for (size_t i = 0; i < matched_lits.size(); i++) {
-                        cout << matched_lits[(i)] << " ";
+                    for (int matched_lit : matched_lits) {
+                        cout << matched_lit << " ";
                     }
                     cout << endl;
                 }
@@ -715,13 +714,13 @@ public:
 
                 if (config.verbosity) {
                     cout << "  Mcls: ";
-                    for (size_t i = 0; i < matched_clauses.size(); i++) {
-                        cout << matched_clauses[(i)] << " ";
+                    for (int matched_clause : matched_clauses) {
+                        cout << matched_clause << " ";
                     }
                     cout << endl;
                     cout << "  Mcls_id: ";
-                    for (size_t i = 0; i < matched_clauses_id.size(); i++) {
-                        cout << matched_clauses_id[(i)] << " ";
+                    for (int i : matched_clauses_id) {
+                        cout << i << " ";
                     }
                     cout << endl;
                 }
@@ -740,13 +739,13 @@ public:
 
             if (config.verbosity) {
                 cout << "  mlits: ";
-                for (size_t i = 0; i < matched_lits.size(); i++) {
-                    cout << matched_lits[(i)] << " ";
+                for (int matched_lit : matched_lits) {
+                    cout << matched_lit << " ";
                 }
                 cout << endl;
                 cout << "  mclauses:\n";
-                for (size_t i = 0; i < matched_clauses.size(); i++) {
-                    clauses[matched_clauses[i]].print("   -> ");
+                for (int matched_clause : matched_clauses) {
+                    clauses[matched_clause].print("   -> ");
                 }
                 cout << endl;
 
