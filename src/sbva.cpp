@@ -144,6 +144,7 @@ public:
     void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
         lit_count_adjust.resize(num_vars * 2);
+        lit_to_clauses.resize(num_vars * 2);
         adjacency_matrix_width = num_vars * 4;
         adjacency_matrix.resize(num_vars);
         found_header = true;
@@ -210,7 +211,6 @@ public:
             } else if (line[0] == 'p') {
                 sscanf(line, "p cnf %lu %lu", &num_vars, &num_clauses);
                 clauses.resize(num_clauses);
-                clauses.reserve(num_clauses * 10);
                 lit_to_clauses.resize(num_vars * 2);
                 lit_count_adjust.resize(num_vars * 2);
                 adjacency_matrix_width = num_vars * 4;
