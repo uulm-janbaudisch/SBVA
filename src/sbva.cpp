@@ -312,9 +312,9 @@ public:
         auto& vec2 = adjacency_matrix[sparsevec_lit_idx(abs2)];
 
         int total_count = 0;
-        for (int *varPtr = vec2.innerIndexPtr(); varPtr < vec2.innerIndexPtr() + vec2.nonZeros(); varPtr++) {
+        for (int *var_ptr = vec2.innerIndexPtr(); var_ptr < vec2.innerIndexPtr() + vec2.nonZeros(); var_ptr++) {
             config.steps--;
-            int var = sparcevec_lit_for_idx(*varPtr);
+            int var = sparcevec_lit_for_idx(*var_ptr);
             int count = vec2.coeffRef(sparsevec_lit_idx(var));
             update_adjacency_matrix(var);
             auto& vec3 = adjacency_matrix[sparsevec_lit_idx(var)];
@@ -412,7 +412,7 @@ public:
     }
 
     void run(SBVA::Tiebreak tiebreak_mode) {
-        struct pair_op {
+        struct PairOp {
             bool operator()(const pair<int, int> &a, const pair<int, int> &b) {
                 return a.first < b.first;
             }
@@ -420,7 +420,7 @@ public:
 
         // The priority queue keeps track of all the literals to evaluate for replacements.
         // Each entry is the pair (num_clauses, lit)
-        priority_queue<pair<int,int>, vector< pair<int,int> >, pair_op> pq;
+        priority_queue<pair<int,int>, vector< pair<int,int> >, PairOp> pq;
 
         // Add all of the variables from the original formula to the priority queue.
         for (size_t i = 1; i <= num_vars; i++) {
