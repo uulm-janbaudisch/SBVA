@@ -411,7 +411,7 @@ public:
         }
     }
 
-    void run(SBVA::Tiebreak tiebreak_mode) {
+    void run_sbva(SBVA::Tiebreak tiebreak_mode) {
         struct PairOp {
             bool operator()(const pair<int, int> &a, const pair<int, int> &b) {
                 return a.first < b.first;
@@ -938,8 +938,8 @@ public:
 
 private:
     bool found_header = false;
-    size_t num_vars;
-    size_t num_clauses;
+    size_t num_vars = 0;
+    size_t num_clauses = 0;
     size_t curr_clause = 0;
     int adj_deleted = 0;
     vector<Clause> clauses;
@@ -971,7 +971,7 @@ CNF::~CNF() {
 
 void CNF::run(SBVA::Tiebreak t) {
     Formula* f = (Formula*)data;
-    f->run(t);
+    f->run_sbva(t);
 }
 
 std::pair<int, int> CNF::to_cnf(FILE* file) {
