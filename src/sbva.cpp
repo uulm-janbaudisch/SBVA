@@ -340,7 +340,7 @@ public:
 
     vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
         vector<int> ret;
-        ret_num_cls = num_clauses -adj_deleted;
+        ret_num_cls = num_clauses - adj_deleted;
         ret_num_vars = num_vars;
         for (size_t i = 0; i < num_clauses; i++) {
             if (clauses[(i)].deleted) continue;
