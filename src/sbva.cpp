@@ -28,7 +28,6 @@ THE SOFTWARE.
 #include <queue>
 #include <vector>
 #include <algorithm>
-#include <unordered_map>
 #include <unordered_set>
 #include <tuple>
 #include <set>
@@ -36,8 +35,6 @@ THE SOFTWARE.
 
 #include <cstdio>
 #include <utility>
-#include <functional>
-#include <memory>
 
 #include <Eigen/SparseCore>
 #include "murmur.h"
