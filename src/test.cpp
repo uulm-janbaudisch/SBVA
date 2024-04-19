@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #include "sbva.h"
 #include <iostream>
+#include <set>
 using std::cout;
 using std::endl;
 
