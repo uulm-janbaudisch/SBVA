@@ -139,7 +139,7 @@ public:
 
     Formula(SBVA::Config& _config) : config(_config) { }
 
-    void init_cnf(uint32_t _num_vars, const set<uint32_t>* _sampl_vars) {
+    void init_cnf(uint32_t _num_vars) {
         num_vars = _num_vars;
         lit_count_adjust.resize(num_vars * 2);
         lit_to_clauses.resize(num_vars * 2);
@@ -147,7 +147,6 @@ public:
         adjacency_matrix.resize(num_vars);
         found_header = true;
         curr_clause = 0;
-        if (_sampl_vars != nullptr) sampl_vars = *_sampl_vars;
         assert(cache == nullptr);
         cache = new ClauseCache;
     }
@@ -336,8 +335,7 @@ public:
         return std::make_pair(num_vars, num_clauses-adj_deleted);
     }
 
-    vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls,
-            set<uint32_t>* ret_sampl_vars) {
+    vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
         vector<int> ret;
         ret_num_cls = num_clauses - adj_deleted;
         ret_num_vars = num_vars;
@@ -348,7 +346,6 @@ public:
             }
             ret.push_back(0);
         }
-        if (ret_sampl_vars != nullptr) *ret_sampl_vars = sampl_vars;
         return ret;
     }
 
@@ -716,11 +713,11 @@ public:
                     int clause_idx = get<1>(pair);
                     int idx = get<2>(pair);
 
-                    (*matched_clauses_swap)[(insert_idx)] = (*matched_clauses)[idx];
-                    (*matched_clauses_id_swap)[(insert_idx)] = (*matched_clauses_id)[idx];
+                    (*matched_clauses_swap)[(insert_idx)] = (*matched_clauses)[(idx)];
+                    (*matched_clauses_id_swap)[(insert_idx)] = (*matched_clauses_id)[(idx)];
                     insert_idx += 1;
 
-                    clauses_to_remove.push_back(make_tuple(clause_idx, (*matched_clauses_id)[idx]));
+                    clauses_to_remove.push_back(make_tuple(clause_idx, (*matched_clauses_id)[(idx)]));
                 }
 
                 swap(matched_clauses,matched_clauses_swap);
@@ -740,10 +737,14 @@ public:
                 }
             }
 
-            if (matched_lits.size() == 1) continue;
-            if (matched_lits.size() <= config.matched_lits_cutoff &&
-                    matched_clauses->size() <= config.matched_cls_cutoff)
+            if (matched_lits.size() == 1) {
                 continue;
+            }
+
+            if (matched_lits.size() <= config.matched_lits_cutoff &&
+                    matched_clauses->size() <= config.matched_cls_cutoff) {
+                continue;
+            }
 
             int matched_clause_count = matched_clauses->size();
             int matched_lit_count = matched_lits.size();
@@ -755,10 +756,12 @@ public:
                 }
                 cout << endl;
                 cout << "  mclauses:\n";
-                for (int matched_clause : *matched_clauses) {
+                for (int matched_clause : (*matched_clauses)) {
                     clauses[matched_clause].print("   -> ");
                 }
-                cout << endl << "--------------------" << endl;
+                cout << endl;
+
+                cout << "--------------------" << endl;
             }
             assert(lit_to_clauses.size() == num_vars*2);
             assert(lit_count_adjust.size() == num_vars*2);
@@ -766,23 +769,6 @@ public:
             // Do the substitution
             num_vars += 1;
             int new_var = num_vars;
-
-            // Check if all in proj. Then we can add it to the sampl_vars
-            if (config.preserve_model_cnt) {
-                bool add_to_sampl_vars = true;
-                for (int matched_clause : *matched_clauses) {
-                    for(const auto&l: clauses[matched_clause].lits) {
-                        if (sampl_vars.count(abs(l)) == 0) {
-                            add_to_sampl_vars = false;
-                            break;
-                        }
-                    }
-                }
-                if (add_to_sampl_vars) sampl_vars.insert(new_var);
-                if (config.verbosity)
-                    cout << "Adding " << new_var << " to sampl_vars? "
-                        << add_to_sampl_vars << endl;
-            }
 
             // Prepare to add new clauses.
             uint32_t new_sz = num_clauses + matched_lit_count + matched_clause_count +
@@ -849,15 +835,12 @@ public:
             }
 
             // Preserving model count:
-            // -----
-            // The only case where we add a model is if both assignments for the
-            // auxiiliary variable satisfy the formula
-            // for the same assignment of the original variables.
-            // This only happens if all(matched_lits) *AND*
+            //
+            // The only case where we add a model is if both assignments for the auxiiliary variable satisfy the formula
+            // for the same assignment of the original variables. This only happens if all(matched_lits) *AND*
             // all(matches_clauses) are satisfied.
             //
-            // The easiest way to fix this is to add one clause that
-            // constrains all(matched_lits) => -f
+            // The easiest way to fix this is to add one clause that constrains all(matched_lits) => -f
             if (config.preserve_model_cnt) {
                 int new_clause = num_clauses + matched_lit_count + matched_clause_count;
                 auto cls = Clause();
@@ -956,7 +939,6 @@ private:
     size_t num_clauses = 0;
     size_t curr_clause = 0;
     int adj_deleted = 0;
-    set<uint32_t> sampl_vars;
     vector<Clause> clauses;
     SBVA::Config& config;
     ClauseCache* cache = nullptr;
@@ -999,17 +981,16 @@ void CNF::to_proof(FILE* file) {
     f->to_proof(file);
 }
 
-vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls,
-        set<uint32_t>* ret_sampl_vars) {
+vector<int> CNF::get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls) {
     Formula* f = (Formula*)data;
-    return f->get_cnf(ret_num_vars, ret_num_cls, ret_sampl_vars);
+    return f->get_cnf(ret_num_vars, ret_num_cls);
 }
 
 
-void CNF::init_cnf(uint32_t num_vars, Config& config, const set<uint32_t>* _sampl_vars) {
+void CNF::init_cnf(uint32_t num_vars, Config& config) {
     assert(data == nullptr);
     Formula* f = new Formula(config);
-    f->init_cnf(num_vars, _sampl_vars);
+    f->init_cnf(num_vars);
     data = (void*)f;
 }
 

@@ -24,11 +24,12 @@ THE SOFTWARE.
 #pragma once
 
 #include <cstdio>
+#include <ctime>
 #include <limits>
 #include <vector>
-#include <set>
 #include <cstdint>
 #include <utility>
+#include <functional>
 
 namespace SBVA {
 
@@ -52,8 +53,7 @@ struct CNF {
     void run(Tiebreak t);
 
     std::pair<int, int> to_cnf(FILE*);
-    std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls,
-            std::set<uint32_t>* ret_sampl_vars = nullptr);
+    std::vector<int> get_cnf(uint32_t& ret_num_vars, uint32_t& ret_num_cls);
 
     void to_proof(FILE*);
 
@@ -61,8 +61,7 @@ struct CNF {
     void parse_cnf(FILE* file, Config& config);
 
     // This is how to add a CNF clause by clause
-    void init_cnf(uint32_t num_vars, Config& config,
-            const std::set<uint32_t>* sampl_vars = nullptr);
+    void init_cnf(uint32_t num_vars, Config& config);
     void add_cl(const std::vector<int>& cl_lits);
     void finish_cnf();
 
