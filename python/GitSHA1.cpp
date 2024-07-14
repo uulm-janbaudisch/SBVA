@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ***********************************************/
 
-#include "src/GitSHA1.hpp"
+#include "../../src/GitSHA1.hpp"
 
 const char* SBVAImpl::get_version_sha1()
 {
