@@ -19,12 +19,10 @@
 # THE SOFTWARE.
 
 cmake_minimum_required (VERSION 3.10 FATAL_ERROR)
-
-enable_language( CXX )
-
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 message(STATUS "LIB directory is '${CMAKE_INSTALL_LIBDIR}'")
 message(STATUS "BIN directory is '${CMAKE_INSTALL_BINDIR}'")
@@ -50,9 +48,6 @@ if(POLICY CMP0104)
     cmake_policy(SET CMP0104 NEW)
 endif()
 
-
-project (sbva)
-
 # -----------------------------------------------------------------------------
 # Make RelWithDebInfo the default build type if otherwise not set
 # -----------------------------------------------------------------------------
@@ -69,11 +64,35 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Doing a ${CMAKE_BUILD_TYPE} build")
 
+# -----------------------------------------------------------------------------
+# Option to enable/disable assertions
+# -----------------------------------------------------------------------------
+
+# Filter out definition of NDEBUG from the default build configuration flags.
+# We will add this ourselves if we want to disable assertions
+foreach (build_config ${build_types})
+    string(TOUPPER ${build_config} upper_case_build_config)
+    foreach (language CXX C)
+        set(VAR_TO_MODIFY "CMAKE_${language}_FLAGS_${upper_case_build_config}")
+        string(REGEX REPLACE "(^| )[/-]D *NDEBUG($| )"
+                             " "
+                             replacement
+                             "${${VAR_TO_MODIFY}}")
+        #message("Original (${VAR_TO_MODIFY}) is ${${VAR_TO_MODIFY}} replacement is ${replacement}")
+        set(${VAR_TO_MODIFY} "${replacement}" CACHE STRING "Default flags for ${build_config} configuration" FORCE)
+    endforeach()
+endforeach()
+
+project (sbva)
+enable_language( CXX )
+include (GenerateExportHeader)
+include (GNUInstallDirs)
+
 # contains some library search cmake scripts
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-include (GenerateExportHeader)
-include (GNUInstallDirs)
+# generate JSON file of compile commands -- useful for code extension
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 option(BUILD_SHARED_LIBS "Build the shared library" ON)
 option(STATICCOMPILE "Compile to static executable" OFF)
@@ -204,24 +223,6 @@ else()
     #what does this do?
     set(DEF_INSTALL_CMAKE_DIR CMake)
 endif()
-
-# -----------------------------------------------------------------------------
-# Option to enable/disable assertions
-# -----------------------------------------------------------------------------
-# Filter out definition of NDEBUG from the default build configuration flags.
-# We will add this ourselves if we want to disable assertions
-foreach (build_config ${build_types})
-    string(TOUPPER ${build_config} upper_case_build_config)
-    foreach (language CXX C)
-        set(VAR_TO_MODIFY "CMAKE_${language}_FLAGS_${upper_case_build_config}")
-        string(REGEX REPLACE "(^| )[/-]D *NDEBUG($| )"
-                             " "
-                             replacement
-                             "${${VAR_TO_MODIFY}}")
-        #message("Original (${VAR_TO_MODIFY}) is ${${VAR_TO_MODIFY}} replacement is ${replacement}")
-        set(${VAR_TO_MODIFY} "${replacement}" CACHE STRING "Default flags for ${build_config} configuration" FORCE)
-    endforeach()
-endforeach()
 
 option(ENABLE_ASSERTIONS "Build with assertions enabled" ON)
 message(STATUS "build type is ${CMAKE_BUILD_TYPE}")
