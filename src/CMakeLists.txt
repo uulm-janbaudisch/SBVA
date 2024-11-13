@@ -52,27 +52,23 @@ set_target_properties(sbva PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
-add_executable (sbva-bin main.cpp)
-add_executable (test test.cpp)
+if(BINARY)
+    add_executable (sbva-bin main.cpp)
+    add_executable (test test.cpp)
 
-target_link_libraries(sbva-bin sbva)
-target_link_libraries(test sbva)
+    target_link_libraries(sbva-bin sbva)
+    target_link_libraries(test sbva)
 
-set_target_properties(test PROPERTIES
-    OUTPUT_NAME test
-    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
-)
+    set_target_properties(test PROPERTIES
+        OUTPUT_NAME test
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+    )
 
-if (NOT WIN32)
     set_target_properties(sbva-bin PROPERTIES
-    OUTPUT_NAME sbva
-    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
-    INSTALL_RPATH_USE_LINK_PATH TRUE)
-else()
-    set_target_properties(sbva-bin PROPERTIES
-    OUTPUT_NAME sbva-win
-    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
-    INSTALL_RPATH_USE_LINK_PATH TRUE)
+        OUTPUT_NAME sbva
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+        INSTALL_RPATH_USE_LINK_PATH TRUE
+    )
 endif()
 
 sbva_add_public_header(sbva ${CMAKE_CURRENT_SOURCE_DIR}/sbva.h )
@@ -107,7 +103,9 @@ install(TARGETS sbva
     PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/sbva"
 )
 
-install(TARGETS sbva-bin
-    EXPORT ${SBVA_EXPORT_NAME}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+if(BINARY)
+    install(TARGETS sbva-bin
+        EXPORT ${SBVA_EXPORT_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif()
